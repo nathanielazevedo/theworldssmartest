@@ -2,11 +2,19 @@
 
 import { useEffect, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
+import { ConvexError } from "convex/values";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { answerStyle } from "@/app/lib/answerStyles";
 
 type Session = { playerId: Id<"players">; gameId: Id<"games"> };
+
+// Convex sends ConvexError.data to the client in production (plain Error
+// messages are hidden there), so read that first for a human message.
+function errorMessage(err: unknown, fallback: string): string {
+  if (err instanceof ConvexError) return String(err.data);
+  return err instanceof Error ? err.message : fallback;
+}
 
 export default function PlayPage() {
   const [session, setSession] = useState<Session | null>(null);
@@ -53,7 +61,7 @@ function JoinForm({ onJoined }: { onJoined: (s: Session) => void }) {
       const res = await join({ name: name.trim() });
       onJoined(res);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not join");
+      setError(errorMessage(err, "Could not join"));
     } finally {
       setBusy(false);
     }
@@ -146,7 +154,7 @@ function GameScreen({
         choiceIndex: i,
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not submit");
+      setError(errorMessage(err, "Could not submit"));
     }
   };
 
@@ -207,26 +215,80 @@ function GameScreen({
 
   // status === "question"
   return (
+    <QuestionPlay
+      name={me?.name}
+      score={me?.score ?? 0}
+      question={state.question!}
+      questionStartedAt={state.questionStartedAt}
+      myChoice={myChoice}
+      onPick={pick}
+      error={error}
+    />
+  );
+}
+
+function QuestionPlay({
+  name,
+  score,
+  question,
+  questionStartedAt,
+  myChoice,
+  onPick,
+  error,
+}: {
+  name?: string;
+  score: number;
+  question: { text: string; options: string[]; timeLimitSec: number };
+  questionStartedAt: number | null;
+  myChoice: number | null;
+  onPick: (i: number) => void;
+  error: string | null;
+}) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 200);
+    return () => clearInterval(t);
+  }, []);
+
+  const remaining = questionStartedAt
+    ? Math.max(
+        0,
+        Math.ceil((questionStartedAt + question.timeLimitSec * 1000 - now) / 1000),
+      )
+    : question.timeLimitSec;
+  const timeUp = remaining <= 0;
+  const locked = myChoice !== null || timeUp;
+
+  return (
     <main className="min-h-screen flex flex-col p-4">
       <div className="flex items-center justify-between text-sm text-muted">
-        <span>{me?.name}</span>
-        <span className="text-gold font-bold">{me?.score ?? 0} pts</span>
+        <span>{name}</span>
+        <span className="text-gold font-bold">{score} pts</span>
+      </div>
+
+      {/* Countdown so nobody taps after time expires. */}
+      <div
+        className={`mx-auto mt-3 flex size-12 items-center justify-center rounded-full text-xl font-black ${
+          remaining <= 5 && !locked ? "bg-rose-600 text-white" : "bg-surface text-gold"
+        }`}
+      >
+        {remaining}
       </div>
 
       <div className="mt-4 mb-6 text-center text-xl font-bold text-cream">
-        {state.question?.text}
+        {question.text}
       </div>
 
       <div className="grid grid-cols-2 gap-3 flex-1">
-        {state.question?.options.map((opt, i) => {
+        {question.options.map((opt, i) => {
           const s = answerStyle(i);
           const chosen = myChoice === i;
-          const dim = myChoice !== null && !chosen;
+          const dim = locked && !chosen;
           return (
             <button
               key={i}
-              onClick={() => pick(i)}
-              disabled={myChoice !== null}
+              onClick={() => onPick(i)}
+              disabled={locked}
               className={`rounded-2xl ${s.bg} ${
                 dim ? "opacity-30" : ""
               } ${chosen ? "ring-4 " + s.ring : ""} p-4 flex flex-col items-center justify-center gap-2 text-center text-white transition`}
@@ -242,7 +304,9 @@ function GameScreen({
         {error ? (
           <span className="text-rose-400">{error}</span>
         ) : myChoice !== null ? (
-          "Locked in — waiting for others…"
+          "Locked in — waiting for results…"
+        ) : timeUp ? (
+          <span className="text-rose-400">Time&apos;s up!</span>
         ) : (
           "Tap your answer!"
         )}

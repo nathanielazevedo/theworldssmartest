@@ -1,5 +1,5 @@
 import { mutation, query } from "./_generated/server";
-import { v } from "convex/values";
+import { v, ConvexError } from "convex/values";
 
 // Kahoot-style speed scoring: a correct answer is worth between MIN and MAX
 // points, scaled linearly by how quickly it came in within the time limit.
@@ -22,14 +22,14 @@ export const submit = mutation({
   },
   handler: async (ctx, { playerId, questionId, choiceIndex }) => {
     const player = await ctx.db.get(playerId);
-    if (!player) throw new Error("Player not found");
+    if (!player) throw new ConvexError("Player not found");
 
     const game = await ctx.db.get(player.gameId);
-    if (!game) throw new Error("Game not found");
+    if (!game) throw new ConvexError("Game not found");
 
     // Must be answering the live question, while it's accepting answers.
     if (game.status !== "question" || game.currentQuestionId !== questionId) {
-      throw new Error("This question is not accepting answers");
+      throw new ConvexError("This question is no longer accepting answers");
     }
 
     // One answer per player per question.
@@ -39,10 +39,10 @@ export const submit = mutation({
         q.eq("playerId", playerId).eq("questionId", questionId),
       )
       .first();
-    if (prior) throw new Error("You already answered this question");
+    if (prior) throw new ConvexError("You already answered this question");
 
     const question = await ctx.db.get(questionId);
-    if (!question) throw new Error("Question not found");
+    if (!question) throw new ConvexError("Question not found");
 
     const now = Date.now();
     const startedAt = game.questionStartedAt ?? now;
@@ -51,7 +51,7 @@ export const submit = mutation({
 
     // Reject answers that arrive after the timer would have expired.
     if (elapsed > timeLimitMs) {
-      throw new Error("Time's up");
+      throw new ConvexError("Time's up!");
     }
 
     const isCorrect = choiceIndex === question.correctIndex;

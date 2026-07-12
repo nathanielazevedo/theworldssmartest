@@ -1,5 +1,5 @@
 import { mutation, query } from "./_generated/server";
-import { v } from "convex/values";
+import { v, ConvexError } from "convex/values";
 
 // Join the current game with a nickname. Guests only in Phase 1 (userId is
 // wired up in Phase 3). Returns the playerId the client stores locally.
@@ -10,11 +10,11 @@ export const join = mutation({
   },
   handler: async (ctx, { name, userId }) => {
     const game = await ctx.db.query("games").order("desc").first();
-    if (!game) throw new Error("No game is running yet");
-    if (game.status === "ended") throw new Error("The game has ended");
+    if (!game) throw new ConvexError("No game is running yet");
+    if (game.status === "ended") throw new ConvexError("The game has ended");
 
     const trimmed = name.trim().slice(0, 24);
-    if (!trimmed) throw new Error("Please enter a name");
+    if (!trimmed) throw new ConvexError("Please enter a name");
 
     const playerId = await ctx.db.insert("players", {
       gameId: game._id,
