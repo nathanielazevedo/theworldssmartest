@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
+// import { useQuery } from "convex/react";
+// import { api } from "@/convex/_generated/api";
 
 export default function Home() {
-  const game = useQuery(api.games.current);
-  const archive = useQuery(api.streams.archive);
-  const live = game != null && game.status !== "ended";
-  const starting = live && game!.status === "lobby";
+  // const game = useQuery(api.games.current);
+  // const archive = useQuery(api.streams.archive);
+  // const live = game != null && game.status !== "ended";
+  // const starting = live && game!.status === "lobby";
 
   return (
     <main className="bg-hero min-h-screen flex flex-col items-center">
@@ -24,9 +24,9 @@ export default function Home() {
           transition={{ type: "spring", stiffness: 180, damping: 16 }}
         />
 
-        <StatusPill game={game} live={live} starting={starting} />
+        {/* <StatusPill game={game} live={live} starting={starting} /> */}
 
-        <motion.div
+        {/* <motion.div
           className="w-full max-w-sm"
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -38,20 +38,26 @@ export default function Home() {
           >
             {live ? "Join the Game" : "Enter"}
           </Link>
-        </motion.div>
+        </motion.div> */}
 
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{
+            delay: 0.4,
+            type: "spring",
+            stiffness: 260,
+            damping: 18,
+          }}
+          whileHover={{ scale: 1.04 }}
+          whileTap={{ scale: 0.97 }}
           className="w-full max-w-sm"
         >
           <Link
             href="/practice"
-            className="flex items-center justify-center gap-2 w-full rounded-full bg-surface hover:bg-surface-2 border border-line/60 text-cream px-6 py-3.5 font-bold transition"
+            className="flex items-center justify-center gap-3 w-full rounded-full bg-gold hover:bg-gold-bright text-ink text-xl font-black py-5 text-center transition shadow-[0_0_50px_-8px] shadow-gold/60"
           >
-            🫏 Practice anytime
-            <span className="text-muted font-normal">· 5 quick questions</span>
+            Begin Cognitive Evaluation
           </Link>
         </motion.div>
 
@@ -60,14 +66,14 @@ export default function Home() {
           donkey brains. 🫏
         </p>
 
-        {archive && archive.length > 0 && (
+        {/* {archive && archive.length > 0 && (
           <a href="#archive" className="text-muted/60 hover:text-muted text-sm">
             ↓ Past streams
           </a>
-        )}
+        )} */}
       </section>
 
-      {/* Archive */}
+      {/* Archive — hidden while in solo mode
       {archive && archive.length > 0 && (
         <section id="archive" className="w-full max-w-2xl px-6 pb-20">
           <h2 className="wordmark text-cream text-2xl mb-6">Past Streams</h2>
@@ -80,40 +86,46 @@ export default function Home() {
                 viewport={{ once: true, margin: "-40px" }}
                 transition={{ delay: Math.min(i * 0.05, 0.3), duration: 0.4 }}
               >
-              <Link
-                href={`/stream/${s.gameId}`}
-                className="block rounded-2xl bg-surface hover:bg-surface-2 border border-line/50 p-5 transition"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="text-xl font-black text-cream">{s.title}</div>
-                  <div className="text-muted text-sm">
-                    {new Date(s.airedAt).toLocaleDateString()}
+                <Link
+                  href={`/stream/${s.gameId}`}
+                  className="block rounded-2xl bg-surface hover:bg-surface-2 border border-line/50 p-5 transition"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="text-xl font-black text-cream">
+                      {s.title}
+                    </div>
+                    <div className="text-muted text-sm">
+                      {new Date(s.airedAt).toLocaleDateString()}
+                    </div>
                   </div>
-                </div>
-                <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted">
-                  <span>{s.questionCount} questions</span>
-                  <span>{s.playerCount} players</span>
-                  {s.winner && (
-                    <span className="text-gold font-semibold">
-                      🏆 {s.winner.name} · {s.winner.score.toLocaleString()}
-                    </span>
-                  )}
-                </div>
-              </Link>
+                  <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted">
+                    <span>{s.questionCount} questions</span>
+                    <span>{s.playerCount} players</span>
+                    {s.winner && (
+                      <span className="text-gold font-semibold">
+                        🏆 {s.winner.name} · {s.winner.score.toLocaleString()}
+                      </span>
+                    )}
+                  </div>
+                </Link>
               </motion.div>
             ))}
           </div>
         </section>
       )}
+      */}
 
-      <Link href="/host" className="text-muted/50 hover:text-muted text-xs pb-6">
+      {/* <Link
+        href="/host"
+        className="text-muted/50 hover:text-muted text-xs pb-6"
+      >
         Host panel
-      </Link>
+      </Link> */}
     </main>
   );
 }
 
-function StatusPill({
+/* function StatusPill({
   game,
   live,
   starting,
@@ -141,4 +153,4 @@ function StatusPill({
       {starting ? "Starting now — get in!" : "🔴 Live now"}
     </div>
   );
-}
+} */
