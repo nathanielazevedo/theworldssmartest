@@ -18,30 +18,30 @@ type Q = {
 
 // --- Funny copy -------------------------------------------------------------
 const CORRECT_LINES = [
-  "Big brain. 🧠",
-  "Certified genius.",
-  "Too easy for you 😎",
-  "Einstein is shaking.",
-  "Show-off. 💅",
-  "Nailed it. 🎯",
+  "Not a donkey! 🧠",
+  "Big brain move.",
+  "Hee-haw… genius. ✨",
+  "Zero donkey detected.",
+  "Certified human brain.",
+  "The donkey is impressed.",
+  "Suspiciously smart.",
   "You just KNEW that.",
-  "Absolute unit of a brain.",
 ];
 const WRONG_LINES = [
-  "Oof. 💀",
-  "Not even close 😬",
-  "The audience gasps.",
-  "Bold strategy. Didn't pay off.",
+  "Donkey brains detected. 🫏",
+  "Hee-haw. 🫏",
+  "That's a donkey answer.",
+  "Big donkey energy.",
+  "Oof. Full donkey.",
+  "The donkey approves. That's bad.",
   "Google would've helped.",
-  "We won't tell anyone. 🤫",
-  "Confidently incorrect.",
-  "Yikes. 📉",
+  "Confidently… wrong.",
 ];
 const STREAK_LINES: Record<number, string> = {
   2: "🔥 Two in a row",
-  3: "🔥🔥 On fire!",
-  4: "🔥🔥🔥 Unstoppable",
-  5: "🌋 GENIUS MODE",
+  3: "🔥🔥 On a roll!",
+  4: "🔥🔥🔥 No donkey here",
+  5: "🧠 GALAXY BRAIN",
 };
 function pickLine(arr: string[]) {
   return arr[Math.floor(Math.random() * arr.length)];
@@ -49,16 +49,16 @@ function pickLine(arr: string[]) {
 function persona(score: number, total: number) {
   const pct = score / total;
   if (pct === 1)
-    return { title: "Certified Genius 🧠👑", blurb: "The World's Smartest… probably. Screenshot this." };
+    return { title: "Galaxy Brain 🧠", blurb: "Zero donkey detected. Screenshot this." };
   if (pct >= 0.8)
-    return { title: "Big Brain Energy 🧠", blurb: "So close to perfect it hurts." };
+    return { title: "Big Brain 🧠", blurb: "Barely a trace of donkey in there." };
   if (pct >= 0.6)
-    return { title: "Respectably Mid 🙂", blurb: "You know things. Some things." };
+    return { title: "Half Donkey 🫏", blurb: "It's a coin flip up there." };
   if (pct >= 0.4)
-    return { title: "You Tried 😅", blurb: "Participation trophy incoming." };
+    return { title: "Mostly Donkey 🫏", blurb: "The ears are showing." };
   if (pct > 0)
-    return { title: "Rough Outing 🫠", blurb: "At least you showed up." };
-  return { title: "Confidently Wrong 💀", blurb: "A flawless run… of wrong answers. Impressive, honestly." };
+    return { title: "Certified Donkey 🫏", blurb: "Hee-haw, friend." };
+  return { title: "PURE DONKEY 🫏🫏", blurb: "A flawless run of wrong. Majestic, honestly." };
 }
 
 export default function PracticePage() {
@@ -265,7 +265,7 @@ function Results({
 }) {
   const total = history.length;
   const p = persona(score, total);
-  const grid = history.map((c) => (c ? "🟩" : "🟥")).join("");
+  const grid = history.map((c) => (c ? "🧠" : "🫏")).join(" ");
   const bigWin = score / total >= 0.8;
 
   return (
@@ -297,7 +297,7 @@ function Results({
               href="/play"
               className="block w-full rounded-full bg-surface hover:bg-surface-2 text-cream px-6 py-4 text-lg font-bold transition"
             >
-              Think you&apos;re smart? Compete live →
+              Not a donkey? Prove it live →
             </Link>
             <Link href="/" className="block text-muted hover:text-cream text-sm pt-1">
               Home

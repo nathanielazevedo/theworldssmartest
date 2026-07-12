@@ -70,10 +70,12 @@ function JoinForm({ onJoined }: { onJoined: (s: Session) => void }) {
 
   return (
     <main className="bg-hero min-h-screen flex flex-col items-center justify-center p-6">
-      <h1 className="wordmark text-cream text-2xl text-center mb-1">
-        The Search for the <span className="text-gold">World&apos;s Smartest</span> Person
-      </h1>
-      <p className="text-muted text-sm mb-10">Enter to compete</p>
+      <img
+        src="/logo.png"
+        alt="Do You Have Donkey Brains?"
+        className="w-56 max-w-[70vw] mb-2 drop-shadow-2xl"
+      />
+      <p className="text-muted text-sm mb-10">Enter to find out 🫏</p>
 
       {noGame ? (
         <p className="text-muted text-center animate-pulse">

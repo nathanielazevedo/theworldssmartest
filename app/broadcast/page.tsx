@@ -97,7 +97,12 @@ function Lobby({ players }: { players: { _id: string; name: string }[] }) {
   }, []);
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center text-center gap-8">
+    <div className="flex-1 flex flex-col items-center justify-center text-center gap-6">
+      <img
+        src="/logo.png"
+        alt="Do You Have Donkey Brains?"
+        className="w-64 drop-shadow-2xl"
+      />
       <div className="text-3xl font-bold text-white/70">Join the game on your phone</div>
       <div>
         <div className="text-2xl text-white/60 uppercase tracking-widest">Go to</div>

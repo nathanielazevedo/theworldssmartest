@@ -1,20 +1,22 @@
 @import "tailwindcss";
 
 /* ============================================================
-   Brand: "The Search for the World's Smartest Person"
-   Signature palette — deep electric violet + warm gold.
-   These names become Tailwind utilities: bg-ink, text-gold, etc.
+   Brand: "Do You Have Donkey Brains?"
+   Palette pulled from the logo — black, school-bus yellow, punchy
+   red, and white. Token names are kept from the old theme so the
+   whole app re-skins by changing these values.
    ============================================================ */
 @theme {
-  --color-ink: #12081f; /* page background (near-black violet) */
-  --color-surface: #241141; /* raised panels / cards */
-  --color-surface-2: #341a6b; /* lighter panel / hover */
-  --color-line: #402b6e; /* subtle borders */
-  --color-gold: #ffc53d; /* primary accent: CTAs, winner, timer */
-  --color-gold-bright: #ffd766;
-  --color-cream: #f4eeff; /* primary text */
-  --color-muted: #b9a9e0; /* secondary text */
-  --color-glow: #7c3aed; /* violet glow for gradients */
+  --color-ink: #0d0d0d; /* page background (near-black) */
+  --color-surface: #1b1b1b; /* raised panels / cards */
+  --color-surface-2: #292929; /* lighter panel / hover */
+  --color-line: #3a3a3a; /* subtle borders */
+  --color-gold: #ffd21e; /* PRIMARY accent (brand yellow): CTAs, headers */
+  --color-gold-bright: #ffdd4a;
+  --color-red: #e4181f; /* secondary accent: live, emphasis */
+  --color-red-bright: #ff3b41;
+  --color-cream: #fafaf7; /* primary text (near-white) */
+  --color-muted: #a3a3a3; /* secondary text */
 }
 
 :root {
@@ -35,7 +37,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* The wordmark look — heavy, tight, uppercase. */
+/* Heavy, tight, uppercase headline look. */
 .wordmark {
   text-transform: uppercase;
   letter-spacing: -0.02em;
@@ -43,15 +45,15 @@ body {
   font-weight: 900;
 }
 
-/* Hero glow behind the homepage + lobby. */
+/* Hero glow — a warm yellow spotlight on black, behind the logo. */
 .bg-hero {
   background:
-    radial-gradient(ellipse 80% 60% at 50% -10%, #4a2394 0%, transparent 60%),
-    radial-gradient(ellipse 60% 50% at 50% 110%, #2a1152 0%, transparent 55%),
+    radial-gradient(ellipse 70% 55% at 50% 38%, rgba(255, 210, 30, 0.16) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 50% 110%, rgba(228, 24, 31, 0.1) 0%, transparent 55%),
     var(--color-ink);
 }
 
-/* Animated gradient for the broadcast stage. */
+/* Animated dark gradient for the broadcast stage (yellow + red hints). */
 @keyframes drift {
   0% {
     background-position: 0% 50%;
@@ -65,12 +67,12 @@ body {
 }
 
 .bg-broadcast {
-  background: linear-gradient(120deg, #1a0b33, #4a1e8a, #2a1152, #12081f);
+  background: linear-gradient(120deg, #0d0d0d, #2b2400, #0d0d0d, #1e0708);
   background-size: 300% 300%;
   animation: drift 20s ease infinite;
 }
 
-/* Soft pulsing "LIVE" dot. */
+/* Pulsing "LIVE" dot. */
 @keyframes livepulse {
   0%,
   100% {

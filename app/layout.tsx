@@ -3,8 +3,8 @@ import "./globals.css";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
-  title: "Live Trivia",
-  description: "Real-time trivia for live streams",
+  title: "Do You Have Donkey Brains?",
+  description: "The live trivia game that decides if you've got donkey brains. 🫏",
 };
 
 export default function RootLayout({

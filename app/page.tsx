@@ -15,18 +15,14 @@ export default function Home() {
     <main className="bg-hero min-h-screen flex flex-col items-center">
       {/* Hero — first viewport */}
       <section className="min-h-screen w-full flex flex-col items-center justify-center gap-10 p-6">
-        <motion.h1
-          className="wordmark text-cream text-5xl sm:text-6xl text-center"
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
-        >
-          The Search for the
-          <br />
-          <span className="text-gold">World&apos;s Smartest</span>
-          <br />
-          Person
-        </motion.h1>
+        <motion.img
+          src="/logo.png"
+          alt="Do You Have Donkey Brains?"
+          className="w-72 sm:w-96 max-w-[85vw] drop-shadow-2xl"
+          initial={{ opacity: 0, scale: 0.9, y: 10 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ type: "spring", stiffness: 180, damping: 16 }}
+        />
 
         <StatusPill game={game} live={live} starting={starting} />
 
@@ -54,14 +50,14 @@ export default function Home() {
             href="/practice"
             className="flex items-center justify-center gap-2 w-full rounded-full bg-surface hover:bg-surface-2 border border-line/60 text-cream px-6 py-3.5 font-bold transition"
           >
-            🧠 Practice anytime
+            🫏 Practice anytime
             <span className="text-muted font-normal">· 5 quick questions</span>
           </Link>
         </motion.div>
 
         <p className="text-muted text-sm max-w-xs text-center">
-          Answer fastest, climb the leaderboard, and prove you&apos;re the
-          smartest in the room.
+          Answer fast, dodge the dumb mistakes, and prove you don&apos;t have
+          donkey brains. 🫏
         </p>
 
         {archive && archive.length > 0 && (
@@ -140,9 +136,9 @@ function StatusPill({
   }
 
   return (
-    <div className="flex items-center gap-2 rounded-full bg-gold/15 border border-gold/40 px-5 py-2 text-gold font-bold">
-      <span className="live-dot size-2.5 rounded-full bg-gold" />
-      {starting ? "Starting now — get in!" : "Live now"}
+    <div className="flex items-center gap-2 rounded-full bg-red/15 border border-red/50 px-5 py-2 text-red-bright font-bold">
+      <span className="live-dot size-2.5 rounded-full bg-red" />
+      {starting ? "Starting now — get in!" : "🔴 Live now"}
     </div>
   );
 }
