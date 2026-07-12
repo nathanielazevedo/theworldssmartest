@@ -6,16 +6,15 @@ import { api } from "@/convex/_generated/api";
 
 export default function Home() {
   const game = useQuery(api.games.current);
+  const archive = useQuery(api.streams.archive);
   const live = game != null && game.status !== "ended";
   const starting = live && game!.status === "lobby";
 
   return (
-    <main className="bg-hero min-h-screen flex flex-col items-center justify-between p-6">
-      <div className="h-8" />
-
-      <div className="flex flex-col items-center text-center gap-10 max-w-3xl">
-        {/* Wordmark */}
-        <h1 className="wordmark text-cream text-5xl sm:text-6xl">
+    <main className="bg-hero min-h-screen flex flex-col items-center">
+      {/* Hero — first viewport */}
+      <section className="min-h-screen w-full flex flex-col items-center justify-center gap-10 p-6">
+        <h1 className="wordmark text-cream text-5xl sm:text-6xl text-center">
           The Search for the
           <br />
           <span className="text-gold">World&apos;s Smartest</span>
@@ -23,10 +22,8 @@ export default function Home() {
           Person
         </h1>
 
-        {/* Live status */}
         <StatusPill game={game} live={live} starting={starting} />
 
-        {/* The one thing to do */}
         <Link
           href="/play"
           className="w-full max-w-sm rounded-full bg-gold hover:bg-gold-bright text-ink text-2xl font-black py-5 text-center transition shadow-[0_0_50px_-8px] shadow-gold/50"
@@ -34,14 +31,51 @@ export default function Home() {
           {live ? "Join the Game" : "Enter"}
         </Link>
 
-        <p className="text-muted text-sm max-w-xs">
+        <p className="text-muted text-sm max-w-xs text-center">
           Answer fastest, climb the leaderboard, and prove you&apos;re the
           smartest in the room.
         </p>
-      </div>
 
-      {/* Tiny host entry — most users ignore this */}
-      <Link href="/host" className="text-muted/60 hover:text-muted text-xs">
+        {archive && archive.length > 0 && (
+          <a href="#archive" className="text-muted/60 hover:text-muted text-sm">
+            ↓ Past streams
+          </a>
+        )}
+      </section>
+
+      {/* Archive */}
+      {archive && archive.length > 0 && (
+        <section id="archive" className="w-full max-w-2xl px-6 pb-20">
+          <h2 className="wordmark text-cream text-2xl mb-6">Past Streams</h2>
+          <div className="space-y-3">
+            {archive.map((s) => (
+              <Link
+                key={s.gameId}
+                href={`/stream/${s.gameId}`}
+                className="block rounded-2xl bg-surface hover:bg-surface-2 border border-line/50 p-5 transition"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="text-xl font-black text-cream">{s.title}</div>
+                  <div className="text-muted text-sm">
+                    {new Date(s.airedAt).toLocaleDateString()}
+                  </div>
+                </div>
+                <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted">
+                  <span>{s.questionCount} questions</span>
+                  <span>{s.playerCount} players</span>
+                  {s.winner && (
+                    <span className="text-gold font-semibold">
+                      🏆 {s.winner.name} · {s.winner.score.toLocaleString()}
+                    </span>
+                  )}
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <Link href="/host" className="text-muted/50 hover:text-muted text-xs pb-6">
         Host panel
       </Link>
     </main>
@@ -58,7 +92,7 @@ function StatusPill({
   starting: boolean;
 }) {
   if (game === undefined) {
-    return <div className="h-9" />; // reserve space while loading
+    return <div className="h-9" />;
   }
 
   if (!live) {

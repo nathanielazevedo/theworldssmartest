@@ -13,6 +13,7 @@ import type * as games from "../games.js";
 import type * as players from "../players.js";
 import type * as questions from "../questions.js";
 import type * as seed from "../seed.js";
+import type * as streams from "../streams.js";
 
 import type {
   ApiFromModules,
@@ -26,6 +27,7 @@ declare const fullApi: ApiFromModules<{
   players: typeof players;
   questions: typeof questions;
   seed: typeof seed;
+  streams: typeof streams;
 }>;
 
 /**

@@ -34,13 +34,20 @@ export const create = mutation({
   handler: async (ctx, { hostId, questionIds }) => {
     const previous = await ctx.db.query("games").order("desc").first();
     if (previous && previous.status !== "ended") {
-      await ctx.db.patch(previous._id, { status: "ended" });
+      await ctx.db.patch(previous._id, { status: "ended", endedAt: Date.now() });
     }
+
+    // Next episode number = highest existing number + 1.
+    const withNumbers = await ctx.db.query("games").order("desc").collect();
+    const maxNumber = withNumbers.reduce((m, g) => Math.max(m, g.number ?? 0), 0);
+    const number = maxNumber + 1;
 
     const gameId = await ctx.db.insert("games", {
       status: "lobby",
       hostId,
       currentIndex: -1,
+      number,
+      title: `Stream #${number}`,
     });
 
     let order = 0;
@@ -67,7 +74,7 @@ export const advance = mutation({
       .first();
 
     if (!next) {
-      await ctx.db.patch(gameId, { status: "ended" });
+      await ctx.db.patch(gameId, { status: "ended", endedAt: Date.now() });
       return { status: "ended" as const };
     }
 
@@ -124,6 +131,8 @@ export const current = query({
       currentIndex: game.currentIndex,
       totalQuestions: total,
       questionStartedAt: game.questionStartedAt ?? null,
+      number: game.number ?? null,
+      title: game.title ?? null,
       question,
     };
   },

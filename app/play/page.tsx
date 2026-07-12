@@ -122,6 +122,9 @@ function GameScreen({
         }
       : "skip",
   );
+  const leaderboard = useQuery(api.players.leaderboard, {
+    gameId: session.gameId,
+  });
 
   const [error, setError] = useState<string | null>(null);
 
@@ -187,29 +190,15 @@ function GameScreen({
   }
 
   if (state.status === "leaderboard" || state.status === "reveal") {
-    const gotItRight =
-      myChoice !== null &&
-      state.question?.correctIndex === myChoice &&
-      state.status === "reveal";
     return (
-      <Centered>
-        {state.status === "reveal" ? (
-          myChoice === null ? (
-            <div className="text-2xl text-muted">⏱️ No answer</div>
-          ) : gotItRight ? (
-            <div className="text-4xl font-black text-emerald-400">Correct! ✅</div>
-          ) : (
-            <div className="text-4xl font-black text-rose-400">Wrong ❌</div>
-          )
-        ) : (
-          <div className="text-2xl font-bold text-cream">Standings</div>
-        )}
-        <div className="mt-6 text-muted">Score</div>
-        <div className="text-5xl font-black text-gold">{me?.score ?? 0}</div>
-        <div className="mt-1 text-lg text-cream">
-          Rank #{me?.rank} of {me?.totalPlayers}
-        </div>
-      </Centered>
+      <ResultsScreen
+        question={state.question}
+        counts={counts}
+        score={me?.score ?? 0}
+        rank={me?.rank}
+        totalPlayers={me?.totalPlayers}
+        leaderboard={leaderboard ?? []}
+      />
     );
   }
 
@@ -311,6 +300,128 @@ function QuestionPlay({
           "Tap your answer!"
         )}
       </div>
+    </main>
+  );
+}
+
+function ResultsScreen({
+  question,
+  counts,
+  score,
+  rank,
+  totalPlayers,
+  leaderboard,
+}: {
+  question: { text: string; options: string[]; correctIndex: number | null } | null;
+  counts:
+    | {
+        total: number;
+        counts: Record<number, number>;
+        myChoice: number | null;
+        myCorrect: boolean;
+        myPoints: number;
+      }
+    | undefined;
+  score: number;
+  rank?: number;
+  totalPlayers?: number;
+  leaderboard: { _id: string; name: string; score: number; rank: number }[];
+}) {
+  const answered = counts?.myChoice != null;
+  const correct = counts?.myCorrect ?? false;
+  const total = counts?.total ?? 0;
+
+  return (
+    <main className="min-h-screen flex flex-col items-center p-4 gap-4 overflow-y-auto">
+      {/* Own result */}
+      <div className="mt-2 text-center">
+        {!answered ? (
+          <div className="text-3xl font-black text-muted">⏱️ No answer</div>
+        ) : correct ? (
+          <>
+            <div className="text-4xl font-black text-emerald-400">Correct! ✅</div>
+            <div className="text-2xl font-black text-gold mt-1">
+              +{(counts?.myPoints ?? 0).toLocaleString()}
+            </div>
+          </>
+        ) : (
+          <div className="text-4xl font-black text-rose-400">Wrong ❌</div>
+        )}
+      </div>
+
+      {/* Correct answer + crowd breakdown */}
+      {question && (
+        <div className="w-full max-w-sm">
+          <div className="text-center text-sm text-muted mb-3">{question.text}</div>
+          <div className="space-y-2">
+            {question.options.map((opt, i) => {
+              const s = answerStyle(i);
+              const n = counts?.counts[i] ?? 0;
+              const pct = total > 0 ? Math.round((n / total) * 100) : 0;
+              const isCorrect = question.correctIndex === i;
+              const isMine = counts?.myChoice === i;
+              return (
+                <div
+                  key={i}
+                  className={`relative overflow-hidden rounded-lg border ${
+                    isCorrect ? "border-gold" : "border-line/40"
+                  } ${!isCorrect ? "opacity-60" : ""}`}
+                >
+                  <div
+                    className={`absolute inset-y-0 left-0 ${s.bg} opacity-30`}
+                    style={{ width: `${pct}%` }}
+                  />
+                  <div className="relative flex items-center justify-between px-3 py-2 text-cream">
+                    <span className="flex items-center gap-2">
+                      <span>{s.shape}</span>
+                      {opt}
+                      {isCorrect && <span className="text-gold">✓</span>}
+                      {isMine && <span className="text-xs text-muted">(you)</span>}
+                    </span>
+                    <span className="text-muted text-sm">{pct}%</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Your standing */}
+      <div className="text-center">
+        <div className="text-muted text-sm">Your score</div>
+        <div className="text-4xl font-black text-gold">{score.toLocaleString()}</div>
+        {rank != null && (
+          <div className="text-cream">
+            Rank #{rank} of {totalPlayers}
+          </div>
+        )}
+      </div>
+
+      {/* Top standings */}
+      {leaderboard.length > 0 && (
+        <div className="w-full max-w-sm">
+          <div className="text-center text-sm text-muted mb-2">Leaderboard</div>
+          <div className="space-y-1.5">
+            {leaderboard.slice(0, 5).map((p) => (
+              <div
+                key={p._id}
+                className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm font-bold ${
+                  p.rank === 1
+                    ? "bg-gold text-ink"
+                    : "bg-surface text-cream border border-line/50"
+                }`}
+              >
+                <span>
+                  <span className="opacity-60 mr-2">#{p.rank}</span>
+                  {p.name}
+                </span>
+                <span className="font-mono">{p.score.toLocaleString()}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </main>
   );
 }

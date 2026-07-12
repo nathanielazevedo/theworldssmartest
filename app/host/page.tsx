@@ -230,7 +230,10 @@ function RunningGame({ onNewGame }: { onNewGame: () => void }) {
   return (
     <main className="min-h-screen max-w-3xl mx-auto p-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-black">Host Panel</h1>
+        <div>
+          <h1 className="text-3xl font-black">{state.title ?? "Host Panel"}</h1>
+          <div className="text-white/40 text-sm">Host panel</div>
+        </div>
         <div className="text-right text-sm">
           <div className="text-white/50">Status</div>
           <div className="font-bold uppercase">{state.status}</div>

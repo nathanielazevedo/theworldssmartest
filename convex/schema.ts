@@ -16,14 +16,19 @@ export const gameStatus = v.union(
 );
 
 export default defineSchema({
-  // Only one game is ever live at a time. "The current game" is simply the
-  // most recently created row (see games.current).
+  // Each game is one "stream" / episode. Only one is live at a time; "the
+  // current game" is the most recently created row (see games.current). Ended
+  // games with a `number` set make up the public archive (see streams.ts).
   games: defineTable({
     status: gameStatus,
     hostId: v.string(), // opaque host session id (no auth yet in Phase 1)
     currentIndex: v.number(), // index into gameQuestions order; -1 in lobby
     currentQuestionId: v.optional(v.id("questionBank")),
     questionStartedAt: v.optional(v.number()), // ms epoch, for speed scoring
+    // Episode metadata (optional so pre-existing game rows still validate).
+    number: v.optional(v.number()), // sequential episode number, e.g. 1, 2, 3
+    title: v.optional(v.string()), // e.g. "Stream #1"
+    endedAt: v.optional(v.number()), // ms epoch when the episode finished
   }),
 
   questionBank: defineTable({

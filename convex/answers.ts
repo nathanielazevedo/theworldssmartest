@@ -97,11 +97,17 @@ export const liveCounts = query({
     }
 
     let myChoice: number | null = null;
+    let myCorrect = false;
+    let myPoints = 0;
     if (playerId) {
       const mine = rows.find((r) => r.playerId === playerId);
-      if (mine) myChoice = mine.choiceIndex;
+      if (mine) {
+        myChoice = mine.choiceIndex;
+        myCorrect = mine.isCorrect;
+        myPoints = mine.pointsAwarded;
+      }
     }
 
-    return { total: rows.length, counts, myChoice };
+    return { total: rows.length, counts, myChoice, myCorrect, myPoints };
   },
 });
