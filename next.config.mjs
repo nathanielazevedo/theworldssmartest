@@ -1,10 +1,16 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const projectRoot = path.dirname(fileURLToPath(import.meta.url));
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Type-checking is handled by our own `npm run typecheck` (tsc --noEmit),
-  // which runs in CI/pre-deploy. We skip Next's built-in in-build type worker
-  // (flaky in Next 16.2.x) so it can't crash an otherwise-successful build.
-  typescript: {
-    ignoreBuildErrors: true,
+  // Resolve the "@/*" import alias for the webpack build. (tsconfig `paths`
+  // covers the type-checker and Turbopack, but Next's webpack build needs the
+  // alias set explicitly here — otherwise "@/..." imports fail to resolve.)
+  webpack: (config) => {
+    config.resolve.alias["@"] = projectRoot;
+    return config;
   },
 };
 
