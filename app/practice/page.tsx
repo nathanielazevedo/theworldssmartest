@@ -67,7 +67,10 @@ function persona(score: number, total: number) {
   if (pct >= 0.8)
     return { title: "Barely Human 🧠", blurb: "Only a faint whiff of donkey." };
   if (pct >= 0.6)
-    return { title: "Mild Donkey 🫏", blurb: "The ears are small, but they're there." };
+    return {
+      title: "Mild Donkey 🫏",
+      blurb: "The ears are small, but they're there.",
+    };
   if (pct >= 0.4)
     return { title: "Half Donkey 🫏", blurb: "It's a coin flip up there." };
   if (pct > 0)
@@ -124,7 +127,9 @@ export default function PracticePage() {
   const q = questions[index];
   const answered = choice !== null;
   const gotItRight = answered && choice === q.correctIndex;
-  const streakBadge = gotItRight ? STREAK_LINES[Math.min(streak, 5)] : undefined;
+  const streakBadge = gotItRight
+    ? STREAK_LINES[Math.min(streak, 5)]
+    : undefined;
 
   const pick = (i: number) => {
     if (answered) return;
@@ -162,23 +167,26 @@ export default function PracticePage() {
       <div className="text-xs text-muted uppercase tracking-wide text-center mt-6">
         {q.category} · {q.difficulty}
       </div>
-      <h1 className="mt-2 mb-6 text-center text-2xl font-bold text-cream">
+      <h1 className="mt-2 mb-8 text-center text-3xl sm:text-4xl font-black text-cream leading-snug">
         {q.text}
       </h1>
 
       <div className="relative grid grid-cols-1 gap-3 content-start">
-        {answered &&
-          (gotItRight ? <Burst /> : <DonkeyRain />)}
+        {answered && (gotItRight ? <Burst /> : <DonkeyRain />)}
         {q.options.map((opt, i) => {
-          const s = answerStyle(i);
           const isCorrect = i === q.correctIndex;
           const isMine = i === choice;
 
-          let cls = `${s.bg} text-white`;
+          let cls =
+            "bg-black text-white border border-white/10 hover:border-white/30";
           if (answered) {
-            if (isCorrect) cls = "bg-emerald-600 text-white ring-4 ring-emerald-300";
-            else if (isMine) cls = "bg-rose-600 text-white ring-4 ring-rose-300";
-            else cls = "bg-surface text-muted opacity-60";
+            if (isCorrect)
+              cls = "bg-emerald-600 text-white ring-4 ring-emerald-300";
+            else if (isMine)
+              cls = "bg-rose-600 text-white ring-4 ring-rose-300";
+            else
+              cls =
+                "bg-surface text-muted opacity-60 border border-transparent";
           }
 
           return (
@@ -191,16 +199,20 @@ export default function PracticePage() {
                 answered && isCorrect
                   ? { scale: [1, 1.06, 1] }
                   : answered && isMine
-                    ? { x: [0, -8, 8, -6, 6, 0] } // shake on wrong pick
+                    ? { x: [0, -8, 8, -6, 6, 0] }
                     : {}
               }
               transition={{ duration: 0.4 }}
               className={`rounded-2xl ${cls} px-5 py-4 flex items-center gap-3 text-left text-lg font-bold transition-colors`}
             >
-              <span className="text-2xl">{s.shape}</span>
+              <span className="w-7 h-7 flex items-center justify-center rounded-full bg-white/10 text-sm font-black shrink-0">
+                {String.fromCharCode(65 + i)}
+              </span>
               <span className="flex-1">{opt}</span>
               {answered && isCorrect && <span className="text-2xl">✅</span>}
-              {answered && isMine && !isCorrect && <span className="text-2xl">🫏</span>}
+              {answered && isMine && !isCorrect && (
+                <span className="text-2xl">🫏</span>
+              )}
             </motion.button>
           );
         })}
@@ -214,21 +226,37 @@ export default function PracticePage() {
             animate={{ opacity: 1, y: 0 }}
             className="mt-5"
           >
-            <Certificate smart={gotItRight} />
-
             <motion.div
               initial={{ scale: 0.7 }}
               animate={{ scale: 1 }}
               transition={{ type: "spring", stiffness: 320, damping: 14 }}
               className="text-center mt-4"
             >
+              {!gotItRight && (
+                <motion.div
+                  initial={{ scale: 1.4, rotate: -6, opacity: 0 }}
+                  animate={{ scale: 1, rotate: 3, opacity: 1 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 15 }}
+                  className="mx-auto mb-3 w-28 h-28 rounded-full overflow-hidden"
+                >
+                  <Image
+                    src="/donkey.png"
+                    alt="Donkey face"
+                    width={112}
+                    height={112}
+                    className="w-full h-full object-cover"
+                  />
+                </motion.div>
+              )}
               <div
                 className={`text-2xl font-black ${gotItRight ? "text-emerald-400" : "text-rose-400"}`}
               >
                 {reaction}
               </div>
               {streakBadge && (
-                <div className="mt-1 text-lg font-black text-gold">{streakBadge}</div>
+                <div className="mt-1 text-lg font-black text-gold">
+                  {streakBadge}
+                </div>
               )}
               {!gotItRight && (
                 <div className="mt-1 text-sm text-muted">
@@ -258,7 +286,13 @@ export default function PracticePage() {
  * The certificate reveal. Slams in rotated, like a stamp hitting paper, then
  * settles. `smart` picks which of the two certificates gets awarded.
  */
-function Certificate({ smart, big = false }: { smart: boolean; big?: boolean }) {
+function Certificate({
+  smart,
+  big = false,
+}: {
+  smart: boolean;
+  big?: boolean;
+}) {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 1.6, rotate: smart ? 8 : -8, y: -20 }}
@@ -266,7 +300,7 @@ function Certificate({ smart, big = false }: { smart: boolean; big?: boolean }) 
       transition={{ type: "spring", stiffness: 420, damping: 18, mass: 0.8 }}
       className={`relative mx-auto w-full overflow-hidden rounded-xl ring-4 ${
         smart ? "ring-emerald-400/70" : "ring-rose-500/70"
-      } ${big ? "max-w-sm" : "max-w-xs"} shadow-2xl`}
+      } ${big ? "max-w-md" : "max-w-xs"} shadow-2xl`}
     >
       <Image
         src={smart ? CERT.smart : CERT.donkey}
@@ -291,7 +325,10 @@ function Certificate({ smart, big = false }: { smart: boolean; big?: boolean }) 
  */
 function CertPreload() {
   return (
-    <div aria-hidden className="pointer-events-none absolute h-px w-px overflow-hidden opacity-0">
+    <div
+      aria-hidden
+      className="pointer-events-none absolute h-px w-px overflow-hidden opacity-0"
+    >
       <Image src={CERT.smart} alt="" width={384} height={271} priority />
       <Image src={CERT.donkey} alt="" width={384} height={271} priority />
     </div>
@@ -299,7 +336,13 @@ function CertPreload() {
 }
 
 /** Brains vs. donkeys, filled in as you go. */
-function DonkeyMeter({ history, total }: { history: boolean[]; total: number }) {
+function DonkeyMeter({
+  history,
+  total,
+}: {
+  history: boolean[];
+  total: number;
+}) {
   return (
     <span className="flex gap-1 text-sm" title="Your brain, so far">
       {Array.from({ length: total }).map((_, i) => (
@@ -361,7 +404,12 @@ function DonkeyRain({ big = false }: { big?: boolean }) {
           key={i}
           className={`absolute ${big ? "text-4xl" : "text-3xl"}`}
           initial={{ opacity: 0, x: p.x, y: -140, scale: 0.6, rotate: 0 }}
-          animate={{ opacity: [0, 1, 1, 0], y: big ? 340 : 260, scale: 1, rotate: p.r }}
+          animate={{
+            opacity: [0, 1, 1, 0],
+            y: big ? 340 : 260,
+            scale: 1,
+            rotate: p.r,
+          }}
           transition={{ duration: 1.3, delay: p.delay, ease: "easeIn" }}
         >
           🫏
@@ -424,25 +472,24 @@ function Results({
           <div className="space-y-3 w-full max-w-xs mx-auto">
             <motion.button
               whileTap={{ scale: 0.96 }}
-              onClick={share}
+              onClick={onAgain}
               className="w-full rounded-full bg-gold hover:bg-gold-bright text-ink px-6 py-4 text-lg font-black transition"
             >
-              {copied ? "Copied! Go humiliate a friend 📋" : "Share your diagnosis 🫏"}
+              {smart ? "Defend your title 🔁" : "Try again 🔁"}
             </motion.button>
             <motion.button
               whileTap={{ scale: 0.96 }}
-              onClick={onAgain}
+              onClick={share}
               className="w-full rounded-full bg-surface hover:bg-surface-2 text-cream px-6 py-4 text-lg font-bold transition"
             >
-              {smart ? "Defend your title 🔁" : "Beg for a rematch 🔁"}
+              {copied
+                ? "Copied! Go humiliate a friend 📋"
+                : "Share your diagnosis 🫏"}
             </motion.button>
             <Link
-              href="/play"
-              className="block w-full rounded-full bg-surface hover:bg-surface-2 text-cream px-6 py-4 text-lg font-bold transition"
+              href="/"
+              className="block text-muted hover:text-cream text-sm pt-1"
             >
-              Not a donkey? Prove it live →
-            </Link>
-            <Link href="/" className="block text-muted hover:text-cream text-sm pt-1">
               Home
             </Link>
           </div>
