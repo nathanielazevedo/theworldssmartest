@@ -11,6 +11,7 @@
 import type * as answers from "../answers.js";
 import type * as games from "../games.js";
 import type * as players from "../players.js";
+import type * as practice from "../practice.js";
 import type * as questions from "../questions.js";
 import type * as seed from "../seed.js";
 import type * as streams from "../streams.js";
@@ -25,6 +26,7 @@ declare const fullApi: ApiFromModules<{
   answers: typeof answers;
   games: typeof games;
   players: typeof players;
+  practice: typeof practice;
   questions: typeof questions;
   seed: typeof seed;
   streams: typeof streams;

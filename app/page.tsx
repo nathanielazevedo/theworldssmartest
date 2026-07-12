@@ -44,6 +44,21 @@ export default function Home() {
           </Link>
         </motion.div>
 
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+          className="w-full max-w-sm"
+        >
+          <Link
+            href="/practice"
+            className="flex items-center justify-center gap-2 w-full rounded-full bg-surface hover:bg-surface-2 border border-line/60 text-cream px-6 py-3.5 font-bold transition"
+          >
+            🧠 Practice anytime
+            <span className="text-muted font-normal">· 5 quick questions</span>
+          </Link>
+        </motion.div>
+
         <p className="text-muted text-sm max-w-xs text-center">
           Answer fastest, climb the leaderboard, and prove you&apos;re the
           smartest in the room.
