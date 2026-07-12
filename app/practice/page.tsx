@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useConvex } from "convex/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { api } from "@/convex/_generated/api";
@@ -16,30 +17,40 @@ type Q = {
   difficulty: string;
 };
 
+// --- Certificates -----------------------------------------------------------
+// Heads up: the source files are named the opposite of what they depict.
+// These constants are the source of truth — go by the headline, not the path.
+const CERT = {
+  /** Headline: "YOU DO HAVE DONKEY BRAINS" — shown on a wrong answer. */
+  donkey: "/donthave.png",
+  /** Headline: "YOU DON'T HAVE DONKEY BRAINS" — shown on a correct answer. */
+  smart: "/dohave.png",
+} as const;
+
 // --- Funny copy -------------------------------------------------------------
 const CORRECT_LINES = [
-  "Not a donkey! 🧠",
-  "Big brain move.",
-  "Hee-haw… genius. ✨",
-  "Zero donkey detected.",
-  "Certified human brain.",
-  "The donkey is impressed.",
-  "Suspiciously smart.",
-  "You just KNEW that.",
+  "Certified NOT a donkey.",
+  "The donkey is furious.",
+  "Brain detected. Barely.",
+  "Hee-haw? No. Genius.",
+  "Somebody's been reading.",
+  "Donkey-free… for now.",
+  "That's a human brain, folks.",
+  "Suspiciously correct.",
 ];
 const WRONG_LINES = [
-  "Donkey brains detected. 🫏",
-  "Hee-haw. 🫏",
-  "That's a donkey answer.",
-  "Big donkey energy.",
-  "Oof. Full donkey.",
-  "The donkey approves. That's bad.",
-  "Google would've helped.",
-  "Confidently… wrong.",
+  "HEE-HAW. 🫏",
+  "Donkey brains. Confirmed.",
+  "That was 100% donkey.",
+  "The donkey nods approvingly.",
+  "Straight to the barn with you.",
+  "A donkey guessed better.",
+  "Confidently, catastrophically wrong.",
+  "Big ears. Bigger donkey energy.",
 ];
 const STREAK_LINES: Record<number, string> = {
   2: "🔥 Two in a row",
-  3: "🔥🔥 On a roll!",
+  3: "🔥🔥 The donkey is sweating",
   4: "🔥🔥🔥 No donkey here",
   5: "🧠 GALAXY BRAIN",
 };
@@ -49,16 +60,22 @@ function pickLine(arr: string[]) {
 function persona(score: number, total: number) {
   const pct = score / total;
   if (pct === 1)
-    return { title: "Galaxy Brain 🧠", blurb: "Zero donkey detected. Screenshot this." };
+    return {
+      title: "PURE GENIUS 🧠",
+      blurb: "Zero donkey detected. Print it. Frame it. Show your mother.",
+    };
   if (pct >= 0.8)
-    return { title: "Big Brain 🧠", blurb: "Barely a trace of donkey in there." };
+    return { title: "Barely Human 🧠", blurb: "Only a faint whiff of donkey." };
   if (pct >= 0.6)
-    return { title: "Half Donkey 🫏", blurb: "It's a coin flip up there." };
+    return { title: "Mild Donkey 🫏", blurb: "The ears are small, but they're there." };
   if (pct >= 0.4)
-    return { title: "Mostly Donkey 🫏", blurb: "The ears are showing." };
+    return { title: "Half Donkey 🫏", blurb: "It's a coin flip up there." };
   if (pct > 0)
-    return { title: "Certified Donkey 🫏", blurb: "Hee-haw, friend." };
-  return { title: "PURE DONKEY 🫏🫏", blurb: "A flawless run of wrong. Majestic, honestly." };
+    return { title: "Certified Donkey 🫏", blurb: "Hee-haw, friend. Hee-haw." };
+  return {
+    title: "MAXIMUM DONKEY 🫏🫏🫏",
+    blurb: "A flawless run of wrong. Majestic, honestly.",
+  };
 }
 
 export default function PracticePage() {
@@ -124,8 +141,14 @@ export default function PracticePage() {
   };
 
   return (
-    <main className="min-h-screen flex flex-col p-5 max-w-md mx-auto w-full">
-      {/* Progress */}
+    <motion.main
+      // The whole page recoils when you answer like a donkey.
+      animate={answered && !gotItRight ? { x: [0, -10, 10, -7, 7, -3, 0] } : {}}
+      transition={{ duration: 0.45 }}
+      className="min-h-screen flex flex-col p-5 max-w-md mx-auto w-full"
+    >
+      <CertPreload />
+
       <div className="flex items-center justify-between text-sm text-muted">
         <Link href="/" className="hover:text-cream">
           ← Exit
@@ -133,9 +156,7 @@ export default function PracticePage() {
         <span>
           Question {index + 1} of {questions.length}
         </span>
-        <span className="text-gold font-bold">
-          {history.filter(Boolean).length} ✓
-        </span>
+        <DonkeyMeter history={history} total={questions.length} />
       </div>
 
       <div className="text-xs text-muted uppercase tracking-wide text-center mt-6">
@@ -146,7 +167,8 @@ export default function PracticePage() {
       </h1>
 
       <div className="relative grid grid-cols-1 gap-3 content-start">
-        {gotItRight && <Burst />}
+        {answered &&
+          (gotItRight ? <Burst /> : <DonkeyRain />)}
         {q.options.map((opt, i) => {
           const s = answerStyle(i);
           const isCorrect = i === q.correctIndex;
@@ -178,13 +200,13 @@ export default function PracticePage() {
               <span className="text-2xl">{s.shape}</span>
               <span className="flex-1">{opt}</span>
               {answered && isCorrect && <span className="text-2xl">✅</span>}
-              {answered && isMine && !isCorrect && <span className="text-2xl">❌</span>}
+              {answered && isMine && !isCorrect && <span className="text-2xl">🫏</span>}
             </motion.button>
           );
         })}
       </div>
 
-      {/* Instant funny feedback + next */}
+      {/* The verdict: a certificate slams down on the desk. */}
       <AnimatePresence>
         {answered && (
           <motion.div
@@ -192,11 +214,13 @@ export default function PracticePage() {
             animate={{ opacity: 1, y: 0 }}
             className="mt-5"
           >
+            <Certificate smart={gotItRight} />
+
             <motion.div
               initial={{ scale: 0.7 }}
               animate={{ scale: 1 }}
               transition={{ type: "spring", stiffness: 320, damping: 14 }}
-              className="text-center"
+              className="text-center mt-4"
             >
               <div
                 className={`text-2xl font-black ${gotItRight ? "text-emerald-400" : "text-rose-400"}`}
@@ -208,20 +232,88 @@ export default function PracticePage() {
               )}
               {!gotItRight && (
                 <div className="mt-1 text-sm text-muted">
-                  Correct answer: “{q.options[q.correctIndex]}”
+                  A non-donkey would have said “{q.options[q.correctIndex]}”
                 </div>
               )}
             </motion.div>
+
             <button
               onClick={next}
               className="mt-4 w-full rounded-full bg-gold hover:bg-gold-bright text-ink px-6 py-4 text-lg font-black transition"
             >
-              {index + 1 < questions.length ? "Next question →" : "See results →"}
+              {index + 1 < questions.length
+                ? gotItRight
+                  ? "Next question →"
+                  : "Redeem yourself →"
+                : "See final verdict →"}
             </button>
           </motion.div>
         )}
       </AnimatePresence>
-    </main>
+    </motion.main>
+  );
+}
+
+/**
+ * The certificate reveal. Slams in rotated, like a stamp hitting paper, then
+ * settles. `smart` picks which of the two certificates gets awarded.
+ */
+function Certificate({ smart, big = false }: { smart: boolean; big?: boolean }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 1.6, rotate: smart ? 8 : -8, y: -20 }}
+      animate={{ opacity: 1, scale: 1, rotate: smart ? -1.5 : 2, y: 0 }}
+      transition={{ type: "spring", stiffness: 420, damping: 18, mass: 0.8 }}
+      className={`relative mx-auto w-full overflow-hidden rounded-xl ring-4 ${
+        smart ? "ring-emerald-400/70" : "ring-rose-500/70"
+      } ${big ? "max-w-sm" : "max-w-xs"} shadow-2xl`}
+    >
+      <Image
+        src={smart ? CERT.smart : CERT.donkey}
+        alt={
+          smart
+            ? "Official certificate: you don't have donkey brains"
+            : "Official certificate: you do have donkey brains"
+        }
+        width={1492}
+        height={1054}
+        sizes="(max-width: 448px) 100vw, 384px"
+        className="h-auto w-full"
+        priority
+      />
+    </motion.div>
+  );
+}
+
+/**
+ * Both certificates are ~1500px wide, so warm the optimizer cache on mount —
+ * otherwise the first verdict pops in a beat late and kills the joke.
+ */
+function CertPreload() {
+  return (
+    <div aria-hidden className="pointer-events-none absolute h-px w-px overflow-hidden opacity-0">
+      <Image src={CERT.smart} alt="" width={384} height={271} priority />
+      <Image src={CERT.donkey} alt="" width={384} height={271} priority />
+    </div>
+  );
+}
+
+/** Brains vs. donkeys, filled in as you go. */
+function DonkeyMeter({ history, total }: { history: boolean[]; total: number }) {
+  return (
+    <span className="flex gap-1 text-sm" title="Your brain, so far">
+      {Array.from({ length: total }).map((_, i) => (
+        <motion.span
+          key={i}
+          initial={i < history.length ? { scale: 0 } : false}
+          animate={{ scale: 1 }}
+          transition={{ type: "spring", stiffness: 500, damping: 12 }}
+          className={i >= history.length ? "opacity-25" : ""}
+        >
+          {i >= history.length ? "•" : history[i] ? "🧠" : "🫏"}
+        </motion.span>
+      ))}
+    </span>
   );
 }
 
@@ -254,6 +346,31 @@ function Burst({ big = false }: { big?: boolean }) {
   );
 }
 
+/** The shame equivalent of confetti: donkeys tumbling down the screen. */
+function DonkeyRain({ big = false }: { big?: boolean }) {
+  const n = big ? 16 : 9;
+  const parts = Array.from({ length: n }).map(() => ({
+    x: (Math.random() - 0.5) * (big ? 400 : 300),
+    delay: Math.random() * 0.35,
+    r: (Math.random() - 0.5) * 200,
+  }));
+  return (
+    <div className="pointer-events-none absolute inset-0 z-10 flex items-start justify-center overflow-visible">
+      {parts.map((p, i) => (
+        <motion.span
+          key={i}
+          className={`absolute ${big ? "text-4xl" : "text-3xl"}`}
+          initial={{ opacity: 0, x: p.x, y: -140, scale: 0.6, rotate: 0 }}
+          animate={{ opacity: [0, 1, 1, 0], y: big ? 340 : 260, scale: 1, rotate: p.r }}
+          transition={{ duration: 1.3, delay: p.delay, ease: "easeIn" }}
+        >
+          🫏
+        </motion.span>
+      ))}
+    </div>
+  );
+}
+
 function Results({
   score,
   history,
@@ -263,35 +380,61 @@ function Results({
   history: boolean[];
   onAgain: () => void;
 }) {
+  const [copied, setCopied] = useState(false);
   const total = history.length;
   const p = persona(score, total);
   const grid = history.map((c) => (c ? "🧠" : "🫏")).join(" ");
-  const bigWin = score / total >= 0.8;
+  // You have to actually beat the donkey to walk away with the good certificate.
+  const smart = score / total >= 0.6;
+
+  const share = async () => {
+    const text = `Do You Have Donkey Brains? ${score}/${total}\n${grid}\n${p.title}`;
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      // Clipboard blocked (insecure origin, denied permission) — no-op.
+    }
+  };
 
   return (
     <Center>
       <div className="relative">
-        {bigWin && <Burst big />}
+        {smart ? <Burst big /> : <DonkeyRain big />}
         <motion.div
           initial={{ scale: 0.6, opacity: 0, rotate: -4 }}
           animate={{ scale: 1, opacity: 1, rotate: 0 }}
           transition={{ type: "spring", stiffness: 240, damping: 14 }}
           className="text-center"
         >
-          <div className="text-3xl mb-1">{grid}</div>
-          <div className="text-7xl font-black text-gold my-1">
+          <div className="text-xs uppercase tracking-[0.2em] text-muted mb-3">
+            Final ruling
+          </div>
+
+          <Certificate smart={smart} big />
+
+          <div className="text-3xl mt-5 mb-1">{grid}</div>
+          <div className="text-6xl font-black text-gold my-1">
             {score}/{total}
           </div>
           <div className="text-2xl font-black text-cream">{p.title}</div>
-          <div className="text-muted mt-1 mb-8 max-w-xs mx-auto">{p.blurb}</div>
+          <div className="text-muted mt-1 mb-7 max-w-xs mx-auto">{p.blurb}</div>
 
           <div className="space-y-3 w-full max-w-xs mx-auto">
             <motion.button
               whileTap={{ scale: 0.96 }}
-              onClick={onAgain}
+              onClick={share}
               className="w-full rounded-full bg-gold hover:bg-gold-bright text-ink px-6 py-4 text-lg font-black transition"
             >
-              Play again 🔁
+              {copied ? "Copied! Go humiliate a friend 📋" : "Share your diagnosis 🫏"}
+            </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.96 }}
+              onClick={onAgain}
+              className="w-full rounded-full bg-surface hover:bg-surface-2 text-cream px-6 py-4 text-lg font-bold transition"
+            >
+              {smart ? "Defend your title 🔁" : "Beg for a rematch 🔁"}
             </motion.button>
             <Link
               href="/play"
