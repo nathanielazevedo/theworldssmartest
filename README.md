@@ -59,3 +59,4 @@ Then:
 - **Phase 3** — Convex Auth accounts + global leaderboard; AI question generation
   (Claude API in a Convex action, host-approved before going live).
 - **Phase 4** — rate limiting, reconnect handling, deploy.
+# theworldssmartest
