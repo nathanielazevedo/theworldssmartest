@@ -1,0 +1,26 @@
+# dependencies
+/node_modules
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+
+# local editor/agent settings (machine-specific)
+.claude/settings.local.json
+
+# env
+.env
+.env*.local
+
+# convex
+.convex/
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts

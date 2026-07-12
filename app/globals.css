@@ -1,0 +1,88 @@
+@import "tailwindcss";
+
+/* ============================================================
+   Brand: "The Search for the World's Smartest Person"
+   Signature palette — deep electric violet + warm gold.
+   These names become Tailwind utilities: bg-ink, text-gold, etc.
+   ============================================================ */
+@theme {
+  --color-ink: #12081f; /* page background (near-black violet) */
+  --color-surface: #241141; /* raised panels / cards */
+  --color-surface-2: #341a6b; /* lighter panel / hover */
+  --color-line: #402b6e; /* subtle borders */
+  --color-gold: #ffc53d; /* primary accent: CTAs, winner, timer */
+  --color-gold-bright: #ffd766;
+  --color-cream: #f4eeff; /* primary text */
+  --color-muted: #b9a9e0; /* secondary text */
+  --color-glow: #7c3aed; /* violet glow for gradients */
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-ink);
+  color: var(--color-cream);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* The wordmark look — heavy, tight, uppercase. */
+.wordmark {
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  line-height: 0.95;
+  font-weight: 900;
+}
+
+/* Hero glow behind the homepage + lobby. */
+.bg-hero {
+  background:
+    radial-gradient(ellipse 80% 60% at 50% -10%, #4a2394 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 50% 110%, #2a1152 0%, transparent 55%),
+    var(--color-ink);
+}
+
+/* Animated gradient for the broadcast stage. */
+@keyframes drift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.bg-broadcast {
+  background: linear-gradient(120deg, #1a0b33, #4a1e8a, #2a1152, #12081f);
+  background-size: 300% 300%;
+  animation: drift 20s ease infinite;
+}
+
+/* Soft pulsing "LIVE" dot. */
+@keyframes livepulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.8);
+  }
+}
+
+.live-dot {
+  animation: livepulse 1.4s ease-in-out infinite;
+}
