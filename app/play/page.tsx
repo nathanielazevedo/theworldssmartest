@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { ConvexError } from "convex/values";
+import { motion } from "framer-motion";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { answerStyle } from "@/app/lib/answerStyles";
@@ -274,17 +275,27 @@ function QuestionPlay({
           const chosen = myChoice === i;
           const dim = locked && !chosen;
           return (
-            <button
+            <motion.button
               key={i}
               onClick={() => onPick(i)}
               disabled={locked}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{
+                opacity: dim ? 0.3 : 1,
+                scale: chosen ? 1.03 : 1,
+              }}
+              transition={{
+                delay: i * 0.05,
+                scale: { type: "spring", stiffness: 400, damping: 15 },
+              }}
+              whileTap={{ scale: 0.94 }}
               className={`rounded-2xl ${s.bg} ${
-                dim ? "opacity-30" : ""
-              } ${chosen ? "ring-4 " + s.ring : ""} p-4 flex flex-col items-center justify-center gap-2 text-center text-white transition`}
+                chosen ? "ring-4 " + s.ring : ""
+              } p-4 flex flex-col items-center justify-center gap-2 text-center text-white`}
             >
               <span className="text-3xl">{s.shape}</span>
               <span className="font-bold">{opt}</span>
-            </button>
+            </motion.button>
           );
         })}
       </div>
@@ -334,20 +345,30 @@ function ResultsScreen({
   return (
     <main className="min-h-screen flex flex-col items-center p-4 gap-4 overflow-y-auto">
       {/* Own result */}
-      <div className="mt-2 text-center">
+      <motion.div
+        className="mt-2 text-center"
+        initial={{ scale: 0.6, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ type: "spring", stiffness: 300, damping: 15 }}
+      >
         {!answered ? (
           <div className="text-3xl font-black text-muted">⏱️ No answer</div>
         ) : correct ? (
           <>
             <div className="text-4xl font-black text-emerald-400">Correct! ✅</div>
-            <div className="text-2xl font-black text-gold mt-1">
+            <motion.div
+              className="text-2xl font-black text-gold mt-1"
+              initial={{ y: 8, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.25 }}
+            >
               +{(counts?.myPoints ?? 0).toLocaleString()}
-            </div>
+            </motion.div>
           </>
         ) : (
           <div className="text-4xl font-black text-rose-400">Wrong ❌</div>
         )}
-      </div>
+      </motion.div>
 
       {/* Correct answer + crowd breakdown */}
       {question && (
@@ -367,9 +388,11 @@ function ResultsScreen({
                     isCorrect ? "border-gold" : "border-line/40"
                   } ${!isCorrect ? "opacity-60" : ""}`}
                 >
-                  <div
+                  <motion.div
                     className={`absolute inset-y-0 left-0 ${s.bg} opacity-30`}
-                    style={{ width: `${pct}%` }}
+                    initial={{ width: 0 }}
+                    animate={{ width: `${pct}%` }}
+                    transition={{ delay: 0.15 + i * 0.05, duration: 0.6, ease: "easeOut" }}
                   />
                   <div className="relative flex items-center justify-between px-3 py-2 text-cream">
                     <span className="flex items-center gap-2">

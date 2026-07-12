@@ -3,6 +3,12 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "convex/react";
 import { FunctionReturnType } from "convex/server";
+import {
+  motion,
+  AnimatePresence,
+  animate,
+  useMotionValue,
+} from "framer-motion";
 import { api } from "@/convex/_generated/api";
 import { answerStyle } from "@/app/lib/answerStyles";
 
@@ -22,23 +28,55 @@ export default function BroadcastPage() {
   if (state === undefined) return <Frame>Loading…</Frame>;
   if (state === null) return <Frame>Waiting for the host to start a game…</Frame>;
 
+  // Key drives the crossfade: changes on every status change and new question.
+  const viewKey =
+    state.status === "question" || state.status === "reveal"
+      ? `${state.status}-${state.currentIndex}`
+      : state.status;
+
   return (
     <Frame>
-      {state.status === "lobby" && <Lobby players={leaderboard ?? []} />}
-      {state.status === "question" && state.question && (
-        <QuestionView state={state} total={counts?.total ?? 0} />
-      )}
-      {state.status === "reveal" && state.question && (
-        <RevealView state={state} counts={counts} />
-      )}
-      {state.status === "leaderboard" && (
-        <Leaderboard players={leaderboard ?? []} title="Leaderboard" />
-      )}
-      {state.status === "ended" && (
-        <Leaderboard players={leaderboard ?? []} title="🏆 Final Results" />
-      )}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={viewKey}
+          className="flex-1 flex flex-col"
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 1.02 }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
+        >
+          {state.status === "lobby" && <Lobby players={leaderboard ?? []} />}
+          {state.status === "question" && state.question && (
+            <QuestionView state={state} total={counts?.total ?? 0} />
+          )}
+          {state.status === "reveal" && state.question && (
+            <RevealView state={state} counts={counts} />
+          )}
+          {state.status === "leaderboard" && (
+            <Leaderboard players={leaderboard ?? []} title="Leaderboard" />
+          )}
+          {state.status === "ended" && (
+            <Leaderboard players={leaderboard ?? []} title="🏆 Final Results" />
+          )}
+        </motion.div>
+      </AnimatePresence>
     </Frame>
   );
+}
+
+// Animated whole-number counter.
+function CountUp({ value }: { value: number }) {
+  const mv = useMotionValue(0);
+  const [display, setDisplay] = useState(0);
+  useEffect(() => {
+    const controls = animate(mv, value, {
+      duration: 0.9,
+      ease: "easeOut",
+      onUpdate: (v) => setDisplay(Math.round(v)),
+    });
+    return () => controls.stop();
+  }, [value, mv]);
+  return <>{display.toLocaleString()}</>;
 }
 
 // Fixed 16:9 stage tuned for an OBS browser source at 1920×1080.
@@ -63,22 +101,40 @@ function Lobby({ players }: { players: { _id: string; name: string }[] }) {
       <div className="text-3xl font-bold text-white/70">Join the game on your phone</div>
       <div>
         <div className="text-2xl text-white/60 uppercase tracking-widest">Go to</div>
-        <div className="text-[6rem] leading-none font-black tracking-tight text-gold drop-shadow-2xl">
+        <motion.div
+          className="text-[6rem] leading-none font-black tracking-tight text-gold drop-shadow-2xl"
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 200, damping: 15 }}
+        >
           {joinUrl || "…"}
-        </div>
+        </motion.div>
       </div>
-      <div className="text-4xl font-bold">
+      <motion.div
+        key={players.length}
+        className="text-4xl font-bold"
+        initial={{ scale: 1.2 }}
+        animate={{ scale: 1 }}
+        transition={{ type: "spring", stiffness: 300, damping: 18 }}
+      >
         {players.length} player{players.length === 1 ? "" : "s"} in
-      </div>
+      </motion.div>
       <div className="flex flex-wrap gap-3 justify-center max-w-4xl">
-        {players.slice(0, 24).map((p) => (
-          <span
-            key={p._id}
-            className="rounded-full bg-white/15 px-5 py-2 text-xl font-semibold"
-          >
-            {p.name}
-          </span>
-        ))}
+        <AnimatePresence>
+          {players.slice(0, 24).map((p) => (
+            <motion.span
+              key={p._id}
+              layout
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 400, damping: 20 }}
+              className="rounded-full bg-white/15 px-5 py-2 text-xl font-semibold"
+            >
+              {p.name}
+            </motion.span>
+          ))}
+        </AnimatePresence>
       </div>
     </div>
   );
@@ -102,6 +158,7 @@ function Countdown({
     Math.ceil((startedAt + limitSec * 1000 - now) / 1000),
   );
   const frac = Math.max(0, Math.min(1, remaining / limitSec));
+  const low = remaining <= 5;
   return (
     <div className="relative size-32">
       <svg viewBox="0 0 100 100" className="size-full -rotate-90">
@@ -110,7 +167,7 @@ function Countdown({
           cx="50"
           cy="50"
           r="44"
-          className="stroke-gold transition-all duration-100"
+          className={`transition-all duration-100 ${low ? "stroke-rose-500" : "stroke-gold"}`}
           strokeWidth="10"
           fill="none"
           strokeDasharray={2 * Math.PI * 44}
@@ -118,12 +175,32 @@ function Countdown({
           strokeLinecap="round"
         />
       </svg>
-      <div className="absolute inset-0 flex items-center justify-center text-5xl font-black text-gold">
+      <motion.div
+        key={remaining}
+        initial={{ scale: low ? 1.4 : 1.15, opacity: 0.5 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ type: "spring", stiffness: 300, damping: 15 }}
+        className={`absolute inset-0 flex items-center justify-center text-5xl font-black ${low ? "text-rose-500" : "text-gold"}`}
+      >
         {remaining}
-      </div>
+      </motion.div>
     </div>
   );
 }
+
+const gridVariants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.09, delayChildren: 0.15 } },
+};
+const tileVariants = {
+  hidden: { opacity: 0, y: 24, scale: 0.92 },
+  show: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { type: "spring" as const, stiffness: 260, damping: 20 },
+  },
+};
 
 function QuestionView({ state, total }: { state: State; total: number }) {
   const q = state.question!;
@@ -137,28 +214,39 @@ function QuestionView({ state, total }: { state: State; total: number }) {
       </div>
 
       <div className="flex-1 flex items-center justify-center text-center px-8">
-        <h1 className="text-6xl font-black leading-tight drop-shadow-2xl">
+        <motion.h1
+          className="text-6xl font-black leading-tight drop-shadow-2xl"
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+        >
           {q.text}
-        </h1>
+        </motion.h1>
       </div>
 
-      <div className="grid grid-cols-2 gap-5">
+      <motion.div
+        className="grid grid-cols-2 gap-5"
+        variants={gridVariants}
+        initial="hidden"
+        animate="show"
+      >
         {q.options.map((opt, i) => {
           const s = answerStyle(i);
           return (
-            <div
+            <motion.div
               key={i}
+              variants={tileVariants}
               className={`${s.bg} rounded-2xl px-8 py-6 flex items-center gap-5 text-3xl font-bold shadow-xl`}
             >
               <span className="text-4xl">{s.shape}</span>
               <span>{opt}</span>
-            </div>
+            </motion.div>
           );
         })}
-      </div>
+      </motion.div>
 
       <div className="mt-6 text-center text-3xl font-bold text-white/80">
-        {total} answered
+        <CountUp value={total} /> answered
       </div>
     </div>
   );
@@ -185,10 +273,20 @@ function RevealView({
           const pct = total > 0 ? Math.round((n / total) * 100) : 0;
           const isCorrect = q.correctIndex === i;
           return (
-            <div
+            <motion.div
               key={i}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{
+                opacity: isCorrect ? 1 : 0.55,
+                y: 0,
+                scale: isCorrect ? [1, 1.06, 1] : 1,
+              }}
+              transition={{
+                delay: i * 0.06,
+                scale: { delay: 0.35, duration: 0.5 },
+              }}
               className={`rounded-2xl overflow-hidden shadow-xl ${
-                isCorrect ? "ring-4 ring-white" : "opacity-60"
+                isCorrect ? "ring-4 ring-white" : ""
               }`}
             >
               <div
@@ -197,17 +295,30 @@ function RevealView({
                 <span className="flex items-center gap-4">
                   <span className="text-4xl">{s.shape}</span>
                   {opt}
-                  {isCorrect && <span className="text-4xl">✅</span>}
+                  {isCorrect && (
+                    <motion.span
+                      className="text-4xl"
+                      initial={{ scale: 0, rotate: -30 }}
+                      animate={{ scale: 1, rotate: 0 }}
+                      transition={{ delay: 0.45, type: "spring", stiffness: 400 }}
+                    >
+                      ✅
+                    </motion.span>
+                  )}
                 </span>
-                <span>{n}</span>
+                <span>
+                  <CountUp value={n} />
+                </span>
               </div>
               <div className="h-3 bg-black/30">
-                <div
-                  className="h-full bg-white/80 transition-all duration-700"
-                  style={{ width: `${pct}%` }}
+                <motion.div
+                  className="h-full bg-white/80"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${pct}%` }}
+                  transition={{ delay: 0.2, duration: 0.7, ease: "easeOut" }}
                 />
               </div>
-            </div>
+            </motion.div>
           );
         })}
       </div>
@@ -225,11 +336,22 @@ function Leaderboard({
   const top = players.slice(0, 8);
   return (
     <div className="flex-1 flex flex-col items-center justify-center gap-8">
-      <h1 className="text-6xl font-black">{title}</h1>
+      <motion.h1
+        className="text-6xl font-black"
+        initial={{ opacity: 0, y: -20, scale: 0.9 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ type: "spring", stiffness: 200, damping: 16 }}
+      >
+        {title}
+      </motion.h1>
       <div className="w-full max-w-3xl space-y-3">
-        {top.map((p) => (
-          <div
+        {top.map((p, idx) => (
+          <motion.div
             key={p._id}
+            layout
+            initial={{ opacity: 0, x: -40 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.15 + idx * 0.12, type: "spring", stiffness: 260, damping: 22 }}
             className={`flex items-center justify-between rounded-2xl px-8 py-5 text-3xl font-bold ${
               p.rank === 1
                 ? "bg-gold text-ink"
@@ -244,8 +366,10 @@ function Leaderboard({
               <span className="w-12 text-center">#{p.rank}</span>
               {p.name}
             </span>
-            <span className="font-mono">{p.score}</span>
-          </div>
+            <span className="font-mono">
+              <CountUp value={p.score} />
+            </span>
+          </motion.div>
         ))}
         {top.length === 0 && (
           <div className="text-center text-2xl text-white/60">No players yet</div>

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { motion } from "framer-motion";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 
@@ -14,22 +15,34 @@ export default function Home() {
     <main className="bg-hero min-h-screen flex flex-col items-center">
       {/* Hero — first viewport */}
       <section className="min-h-screen w-full flex flex-col items-center justify-center gap-10 p-6">
-        <h1 className="wordmark text-cream text-5xl sm:text-6xl text-center">
+        <motion.h1
+          className="wordmark text-cream text-5xl sm:text-6xl text-center"
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+        >
           The Search for the
           <br />
           <span className="text-gold">World&apos;s Smartest</span>
           <br />
           Person
-        </h1>
+        </motion.h1>
 
         <StatusPill game={game} live={live} starting={starting} />
 
-        <Link
-          href="/play"
-          className="w-full max-w-sm rounded-full bg-gold hover:bg-gold-bright text-ink text-2xl font-black py-5 text-center transition shadow-[0_0_50px_-8px] shadow-gold/50"
+        <motion.div
+          className="w-full max-w-sm"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.3, type: "spring", stiffness: 260, damping: 18 }}
         >
-          {live ? "Join the Game" : "Enter"}
-        </Link>
+          <Link
+            href="/play"
+            className="block w-full rounded-full bg-gold hover:bg-gold-bright text-ink text-2xl font-black py-5 text-center transition shadow-[0_0_50px_-8px] shadow-gold/50"
+          >
+            {live ? "Join the Game" : "Enter"}
+          </Link>
+        </motion.div>
 
         <p className="text-muted text-sm max-w-xs text-center">
           Answer fastest, climb the leaderboard, and prove you&apos;re the
@@ -48,9 +61,15 @@ export default function Home() {
         <section id="archive" className="w-full max-w-2xl px-6 pb-20">
           <h2 className="wordmark text-cream text-2xl mb-6">Past Streams</h2>
           <div className="space-y-3">
-            {archive.map((s) => (
-              <Link
+            {archive.map((s, i) => (
+              <motion.div
                 key={s.gameId}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-40px" }}
+                transition={{ delay: Math.min(i * 0.05, 0.3), duration: 0.4 }}
+              >
+              <Link
                 href={`/stream/${s.gameId}`}
                 className="block rounded-2xl bg-surface hover:bg-surface-2 border border-line/50 p-5 transition"
               >
@@ -70,6 +89,7 @@ export default function Home() {
                   )}
                 </div>
               </Link>
+              </motion.div>
             ))}
           </div>
         </section>
