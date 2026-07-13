@@ -127,7 +127,11 @@ function PracticeInner() {
         setSabotagedIndex(trapIdx);
         // Flip correctIndex to any other option index
         const trap = loaded[trapIdx];
-        const wrong = (trap.correctIndex + 1 + Math.floor(Math.random() * (trap.options.length - 1))) % trap.options.length;
+        const wrong =
+          (trap.correctIndex +
+            1 +
+            Math.floor(Math.random() * (trap.options.length - 1))) %
+          trap.options.length;
         loaded[trapIdx] = { ...trap, correctIndex: wrong };
       }
       setQuestions(loaded);
