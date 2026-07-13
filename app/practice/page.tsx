@@ -296,12 +296,12 @@ function PracticeInner() {
                 {gotItRight ? reaction : "Donkey Brains! 🫏"}
               </div>
               {streakBadge && (
-                <div className="text-sm font-black text-gold">{streakBadge}</div>
+                <div className="text-sm font-black text-gold">
+                  {streakBadge}
+                </div>
               )}
               {!gotItRight && (
-                <div className="text-xs text-muted">
-                  {reaction}
-                </div>
+                <div className="text-xs text-muted">{reaction}</div>
               )}
             </div>
             <button
