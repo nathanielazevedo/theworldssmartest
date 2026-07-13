@@ -79,6 +79,7 @@ function Picker() {
   const [selected, setSelected] = useState<Id<"questionBank">[]>([]);
   const [search, setSearch] = useState("");
   const [catFilter, setCatFilter] = useState("All");
+  const [sabotage, setSabotage] = useState(false);
 
   const categories = [
     "All",
@@ -102,6 +103,7 @@ function Picker() {
 
   const startQuiz = () => {
     const params = new URLSearchParams({ ids: selected.join(",") });
+    if (sabotage) params.set("sabotage", "1");
     router.push(`/practice?${params.toString()}`);
   };
 
@@ -115,6 +117,19 @@ function Picker() {
             <p className="text-muted text-sm mt-0.5">
               Choose exactly {TARGET} — answers hidden
             </p>
+            {/* Sabotage toggle */}
+            <label className="flex items-center gap-2 mt-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={sabotage}
+                onChange={(e) => setSabotage(e.target.checked)}
+                className="accent-gold w-4 h-4"
+              />
+              <span className="text-sm text-muted">
+                <span className="text-cream font-semibold">Sabotage mode</span>{" "}
+                — secretly make one answer wrong
+              </span>
+            </label>
           </div>
           <div className="flex items-center gap-3">
             <span

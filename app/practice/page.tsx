@@ -94,6 +94,7 @@ function PracticeInner() {
   const convex = useConvex();
   const searchParams = useSearchParams();
   const [questions, setQuestions] = useState<Q[] | null>(null);
+  const [sabotagedIndex, setSabotagedIndex] = useState<number | null>(null);
   const [index, setIndex] = useState(0);
   const [choice, setChoice] = useState<number | null>(null);
   const [reaction, setReaction] = useState("");
@@ -102,23 +103,35 @@ function PracticeInner() {
 
   const load = useCallback(() => {
     setQuestions(null);
+    setSabotagedIndex(null);
     setIndex(0);
     setChoice(null);
     setReaction("");
     setStreak(0);
     setHistory([]);
     const idsParam = searchParams.get("ids");
-    if (idsParam) {
-      const ids = idsParam.split(",").filter(Boolean) as Id<"questionBank">[];
-      convex
-        .query(api.practice.quizByIds, { ids })
-        .then((qs) => setQuestions(qs as Q[]));
-    } else {
-      const seed = Math.floor(Math.random() * 2 ** 31);
-      convex
-        .query(api.practice.randomQuiz, { seed, count: 5 })
-        .then((qs) => setQuestions(qs as Q[]));
-    }
+    const sabotage = searchParams.get("sabotage") === "1";
+    const fetchPromise = idsParam
+      ? convex.query(api.practice.quizByIds, {
+          ids: idsParam.split(",").filter(Boolean) as Id<"questionBank">[],
+        })
+      : convex.query(api.practice.randomQuiz, {
+          seed: Math.floor(Math.random() * 2 ** 31),
+          count: 5,
+        });
+
+    fetchPromise.then((qs) => {
+      const loaded = qs as Q[];
+      if (sabotage && loaded.length > 0) {
+        const trapIdx = Math.floor(Math.random() * loaded.length);
+        setSabotagedIndex(trapIdx);
+        // Flip correctIndex to any other option index
+        const trap = loaded[trapIdx];
+        const wrong = (trap.correctIndex + 1 + Math.floor(Math.random() * (trap.options.length - 1))) % trap.options.length;
+        loaded[trapIdx] = { ...trap, correctIndex: wrong };
+      }
+      setQuestions(loaded);
+    });
   }, [convex, searchParams]);
 
   useEffect(() => {
@@ -139,7 +152,15 @@ function PracticeInner() {
 
   if (index >= questions.length) {
     const score = history.filter(Boolean).length;
-    return <Results score={score} history={history} onAgain={load} />;
+    return (
+      <Results
+        score={score}
+        history={history}
+        questions={questions}
+        sabotagedIndex={sabotagedIndex}
+        onAgain={load}
+      />
+    );
   }
 
   const q = questions[index];
@@ -444,6 +465,8 @@ function Results({
 }: {
   score: number;
   history: boolean[];
+  questions: Q[];
+  sabotagedIndex: number | null;
   onAgain: () => void;
 }) {
   const [copied, setCopied] = useState(false);
