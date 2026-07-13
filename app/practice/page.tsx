@@ -193,11 +193,11 @@ function PracticeInner() {
       // The whole page recoils when you answer like a donkey.
       animate={answered && !gotItRight ? { x: [0, -10, 10, -7, 7, -3, 0] } : {}}
       transition={{ duration: 0.45 }}
-      className="min-h-screen flex flex-col p-5 max-w-md mx-auto w-full"
+      className="h-screen overflow-hidden flex flex-col p-5 max-w-md mx-auto w-full"
     >
       <CertPreload />
 
-      <div className="flex items-center justify-between text-sm text-muted">
+      <div className="flex items-center justify-between text-sm text-muted shrink-0">
         <Link href="/" className="hover:text-cream">
           ← Exit
         </Link>
@@ -207,10 +207,10 @@ function PracticeInner() {
         <DonkeyMeter history={history} total={questions.length} />
       </div>
 
-      <div className="text-xs text-muted uppercase tracking-wide text-center mt-6">
+      <div className="text-xs text-muted uppercase tracking-wide text-center mt-4 shrink-0">
         {q.category} · {q.difficulty}
       </div>
-      <h1 className="mt-2 mb-8 text-center text-3xl sm:text-4xl font-black text-cream leading-snug">
+      <h1 className="mt-2 mb-4 text-center text-3xl sm:text-4xl font-black text-cream leading-snug shrink-0">
         {q.text}
       </h1>
 
@@ -261,62 +261,54 @@ function PracticeInner() {
         })}
       </div>
 
-      {/* The verdict: a certificate slams down on the desk. */}
+      {/* Fixed bottom verdict — slides up, never pushes the page taller */}
       <AnimatePresence>
         {answered && (
           <motion.div
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-5"
+            initial={{ y: 120, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 120, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 340, damping: 24 }}
+            className="fixed bottom-0 left-0 right-0 z-20 bg-ink/95 backdrop-blur border-t border-line px-5 py-4 flex items-center gap-4 max-w-md mx-auto"
           >
-            <motion.div
-              initial={{ scale: 0.7 }}
-              animate={{ scale: 1 }}
-              transition={{ type: "spring", stiffness: 320, damping: 14 }}
-              className="text-center mt-4"
-            >
-              {!gotItRight && (
-                <motion.div
-                  initial={{ scale: 1.4, rotate: -6, opacity: 0 }}
-                  animate={{ scale: 1, rotate: 3, opacity: 1 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 15 }}
-                  className="mx-auto mb-3 w-28 h-28 rounded-full overflow-hidden"
-                >
-                  <Image
-                    src="/donkey.png"
-                    alt="Donkey face"
-                    width={112}
-                    height={112}
-                    className="w-full h-full object-cover"
-                  />
-                </motion.div>
-              )}
-              <div
-                className={`text-2xl font-black ${gotItRight ? "text-emerald-400" : "text-rose-400"}`}
+            {!gotItRight && (
+              <motion.div
+                initial={{ scale: 1.4, rotate: -6, opacity: 0 }}
+                animate={{ scale: 1, rotate: 3, opacity: 1 }}
+                transition={{ type: "spring", stiffness: 400, damping: 15 }}
+                className="w-14 h-14 rounded-full overflow-hidden shrink-0"
               >
-                {reaction}
+                <Image
+                  src="/donkey.png"
+                  alt="Donkey"
+                  width={56}
+                  height={56}
+                  className="w-full h-full object-cover"
+                />
+              </motion.div>
+            )}
+            <div className="flex-1 min-w-0">
+              <div
+                className={`text-lg font-black ${
+                  gotItRight ? "text-emerald-400" : "text-rose-400"
+                }`}
+              >
+                {gotItRight ? reaction : "Donkey Brains! 🫏"}
               </div>
               {streakBadge && (
-                <div className="mt-1 text-lg font-black text-gold">
-                  {streakBadge}
-                </div>
+                <div className="text-sm font-black text-gold">{streakBadge}</div>
               )}
               {!gotItRight && (
-                <div className="mt-1 text-sm text-muted">
-                  A non-donkey would have said “{q.options[q.correctIndex]}”
+                <div className="text-xs text-muted">
+                  {reaction}
                 </div>
               )}
-            </motion.div>
-
+            </div>
             <button
               onClick={next}
-              className="mt-4 w-full rounded-full bg-gold hover:bg-gold-bright text-ink px-6 py-4 text-lg font-black transition"
+              className="shrink-0 rounded-full bg-gold hover:bg-gold-bright text-ink px-5 py-3 text-base font-black transition"
             >
-              {index + 1 < questions.length
-                ? gotItRight
-                  ? "Next question →"
-                  : "Redeem yourself →"
-                : "See final verdict →"}
+              {index + 1 < questions.length ? "Next →" : "Results →"}
             </button>
           </motion.div>
         )}

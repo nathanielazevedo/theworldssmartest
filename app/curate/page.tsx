@@ -8,7 +8,7 @@ import { Id } from "@/convex/_generated/dataModel";
 
 const HOST_PASSWORD = "dogparty";
 const HOST_AUTH_KEY = "triviaHostAuth";
-const TARGET = 5;
+const TARGET = 5; // unused cap — any number is now allowed
 
 const DIFF_COLOR: Record<string, string> = {
   easy: "text-emerald-400",
@@ -96,7 +96,6 @@ function Picker() {
   const toggle = (id: Id<"questionBank">) => {
     setSelected((prev) => {
       if (prev.includes(id)) return prev.filter((x) => x !== id);
-      if (prev.length >= TARGET) return prev;
       return [...prev, id];
     });
   };
@@ -115,7 +114,7 @@ function Picker() {
           <div>
             <h1 className="font-black text-xl leading-none">Pick Questions</h1>
             <p className="text-muted text-sm mt-0.5">
-              Choose exactly {TARGET} — answers hidden
+              Choose your questions — answers hidden
             </p>
             {/* Sabotage toggle */}
             <label className="flex items-center gap-2 mt-2 cursor-pointer select-none">
@@ -133,13 +132,13 @@ function Picker() {
           </div>
           <div className="flex items-center gap-3">
             <span
-              className={`text-sm font-bold ${selected.length === TARGET ? "text-gold" : "text-muted"}`}
+              className={`text-sm font-bold ${selected.length > 0 ? "text-gold" : "text-muted"}`}
             >
-              {selected.length}/{TARGET} selected
+              {selected.length} selected
             </span>
             <button
               onClick={startQuiz}
-              disabled={selected.length !== TARGET}
+              disabled={selected.length === 0}
               className="bg-gold hover:bg-gold-bright disabled:opacity-40 disabled:cursor-not-allowed text-ink font-black text-sm rounded-lg px-5 py-2.5 transition"
             >
               Begin Evaluation →
@@ -208,7 +207,7 @@ function Picker() {
         )}
         {filtered.map((q) => {
           const isSelected = selected.includes(q._id);
-          const isFull = selected.length >= TARGET && !isSelected;
+          const isFull = false;
 
           return (
             <button
@@ -253,11 +252,11 @@ function Picker() {
       {selected.length > 0 && (
         <div className="fixed bottom-0 inset-x-0 p-4 bg-ink/90 backdrop-blur border-t border-line flex items-center justify-between gap-4 sm:hidden">
           <span className="text-sm text-muted font-semibold">
-            {selected.length}/{TARGET} selected
+            {selected.length} selected
           </span>
           <button
             onClick={startQuiz}
-            disabled={selected.length !== TARGET}
+            disabled={selected.length === 0}
             className="bg-gold hover:bg-gold-bright disabled:opacity-40 text-ink font-black text-sm rounded-lg px-5 py-3 transition"
           >
             Begin Evaluation →
