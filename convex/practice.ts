@@ -1,6 +1,5 @@
 import { query } from "./_generated/server";
 import { v } from "convex/values";
-
 // Deterministic PRNG so a given seed always yields the same shuffle. Convex
 // caches query results by args, so the client passes a fresh random `seed` each
 // time it wants a new quiz (see app/practice/page.tsx).
@@ -39,6 +38,41 @@ export const randomQuiz = query({
       text: q.text,
       options: q.options,
       correctIndex: q.correctIndex,
+      category: q.category,
+      difficulty: q.difficulty,
+    }));
+  },
+});
+
+// Fetch specific questions by ID, in the given order. Used by the host curator.
+export const quizByIds = query({
+  args: { ids: v.array(v.id("questionBank")) },
+  handler: async (ctx, { ids }) => {
+    const results = await Promise.all(ids.map((id) => ctx.db.get(id)));
+    return results
+      .filter((q): q is NonNullable<typeof q> => q !== null)
+      .map((q) => ({
+        _id: q._id,
+        text: q.text,
+        options: q.options,
+        correctIndex: q.correctIndex,
+        category: q.category,
+        difficulty: q.difficulty,
+      }));
+  },
+});
+
+// All approved questions, text only — for the host picker (no answers exposed in this query).
+export const listForPicker = query({
+  args: {},
+  handler: async (ctx) => {
+    const all = await ctx.db
+      .query("questionBank")
+      .withIndex("by_approved", (q) => q.eq("approved", true))
+      .collect();
+    return all.map((q) => ({
+      _id: q._id,
+      text: q.text,
       category: q.category,
       difficulty: q.difficulty,
     }));

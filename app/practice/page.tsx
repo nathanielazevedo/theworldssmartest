@@ -1,12 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useConvex } from "convex/react";
+import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { api } from "@/convex/_generated/api";
-import { answerStyle } from "@/app/lib/answerStyles";
+import { Id } from "@/convex/_generated/dataModel";
 
 type Q = {
   _id: string;
@@ -82,7 +83,16 @@ function persona(score: number, total: number) {
 }
 
 export default function PracticePage() {
+  return (
+    <Suspense fallback={<Center>Loading…</Center>}>
+      <PracticeInner />
+    </Suspense>
+  );
+}
+
+function PracticeInner() {
   const convex = useConvex();
+  const searchParams = useSearchParams();
   const [questions, setQuestions] = useState<Q[] | null>(null);
   const [index, setIndex] = useState(0);
   const [choice, setChoice] = useState<number | null>(null);
@@ -97,11 +107,19 @@ export default function PracticePage() {
     setReaction("");
     setStreak(0);
     setHistory([]);
-    const seed = Math.floor(Math.random() * 2 ** 31);
-    convex
-      .query(api.practice.randomQuiz, { seed, count: 5 })
-      .then((qs) => setQuestions(qs as Q[]));
-  }, [convex]);
+    const idsParam = searchParams.get("ids");
+    if (idsParam) {
+      const ids = idsParam.split(",").filter(Boolean) as Id<"questionBank">[];
+      convex
+        .query(api.practice.quizByIds, { ids })
+        .then((qs) => setQuestions(qs as Q[]));
+    } else {
+      const seed = Math.floor(Math.random() * 2 ** 31);
+      convex
+        .query(api.practice.randomQuiz, { seed, count: 5 })
+        .then((qs) => setQuestions(qs as Q[]));
+    }
+  }, [convex, searchParams]);
 
   useEffect(() => {
     load();
