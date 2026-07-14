@@ -14,15 +14,18 @@
     "@vercel/analytics": "^2.0.1",
     "convex": "^1.42.1",
     "framer-motion": "^12.42.2",
+    "globe.gl": "^2.46.1",
     "next": "^15.5.20",
     "react": "^19.2.7",
-    "react-dom": "^19.2.7"
+    "react-dom": "^19.2.7",
+    "three": "^0.185.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.2",
     "@types/node": "^26.1.1",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
+    "@types/three": "^0.185.1",
     "tailwindcss": "^4.3.2",
     "typescript": "5.8.2"
   }

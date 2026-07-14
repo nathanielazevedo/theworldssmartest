@@ -61,6 +61,27 @@ export default function Home() {
           </Link>
         </motion.div>
 
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{
+            delay: 0.5,
+            type: "spring",
+            stiffness: 260,
+            damping: 18,
+          }}
+          whileHover={{ scale: 1.04 }}
+          whileTap={{ scale: 0.97 }}
+          className="w-full max-w-sm -mt-4"
+        >
+          <Link
+            href="/globe"
+            className="flex items-center justify-center gap-3 w-full rounded-full bg-surface hover:bg-surface-2 border border-line text-cream text-xl font-black py-5 text-center transition"
+          >
+            🌍 Where in the World?
+          </Link>
+        </motion.div>
+
         <p className="text-muted text-sm max-w-xs text-center">
           Answer fast, dodge the dumb mistakes, and prove you don&apos;t have
           donkey brains. 🫏
