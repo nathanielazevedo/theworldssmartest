@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { Burst, DonkeyRain } from "@/app/components/reactions";
+import TriviaRecordMode from "./TriviaRecordMode";
 
 type Q = {
   _id: string;
@@ -86,9 +87,18 @@ function persona(score: number, total: number) {
 export default function PracticePage() {
   return (
     <Suspense fallback={<Center>Loading…</Center>}>
-      <PracticeInner />
+      <PracticeRouter />
     </Suspense>
   );
+}
+
+// ?record=1 -> hands-free Shorts mode; ?record=me -> you tap the answers.
+function PracticeRouter() {
+  const params = useSearchParams();
+  if (params.has("record")) {
+    return <TriviaRecordMode interactive={params.get("record") === "me"} />;
+  }
+  return <PracticeInner />;
 }
 
 function PracticeInner() {

@@ -30,7 +30,34 @@ export type Round = {
   target: CountryFeature;
   options: CountryProps[];
   correctIndex: number;
+  /** Difficulty label, set only for the record-mode ramp. */
+  difficulty?: Difficulty;
 };
+
+/** Ordered easy -> brutal. `rank` drives the ramp; `label` and `color` are UI. */
+export type Difficulty = {
+  label: string;
+  rank: number;
+  /** Tailwind text/border hue for the difficulty chip. */
+  color: string;
+};
+
+const DIFFICULTIES: Difficulty[] = [
+  { label: "EASY", rank: 0, color: "emerald" },
+  { label: "MEDIUM", rank: 1, color: "gold" },
+  { label: "HARD", rank: 2, color: "orange" },
+  { label: "VERY HARD", rank: 3, color: "rose" },
+  { label: "99% FAIL", rank: 4, color: "rose" },
+];
+
+/** Population is a rough but honest proxy for how recognizable a country is. */
+export function difficultyOf(pop: number): Difficulty {
+  if (pop >= 50_000_000) return DIFFICULTIES[0];
+  if (pop >= 20_000_000) return DIFFICULTIES[1];
+  if (pop >= 8_000_000) return DIFFICULTIES[2];
+  if (pop >= 2_000_000) return DIFFICULTIES[3];
+  return DIFFICULTIES[4];
+}
 
 let cache: CountryFeature[] | null = null;
 
@@ -60,7 +87,15 @@ export function flagEmoji(iso: string | null): string {
  * the same continent should usually still be on screen to light up in red.
  */
 export function altitudeFor(size: number): number {
-  return Math.min(2.5, Math.max(0.85, 0.8 + size * 0.05));
+  return Math.min(3.2, Math.max(2.0, 1.5 + size * 0.05));
+}
+
+/**
+ * Much farther out, for a dramatic single-question reveal: the camera pulls
+ * back to show the country as a highlighted spot on the whole globe.
+ */
+export function revealAltitudeFor(size: number): number {
+  return Math.min(3.8, Math.max(2.9, altitudeFor(size) + 1.0));
 }
 
 /** Radius of the pulsing locator ring, in degrees. */
@@ -98,12 +133,33 @@ function pickWeighted(pool: CountryFeature[]): CountryFeature {
 }
 
 /**
- * Builds `count` rounds with no repeated target.
+ * Four options for a target: the target plus three decoys.
  *
  * Decoys come from the target's own continent wherever possible. Drawing them
  * globally would let you win by recognizing the continent alone, without
- * knowing the country.
+ * knowing the country. Oceania has only 6 playable countries, so we top up from
+ * other continents when a continent can't field three decoys of its own.
  */
+function optionsFor(
+  target: CountryFeature,
+  playable: CountryFeature[],
+): Pick<Round, "options" | "correctIndex"> {
+  const t = target.properties;
+  const sameContinent = playable.filter(
+    (f) => f.properties.continent === t.continent && f.properties.name !== t.name,
+  );
+  const elsewhere = playable.filter(
+    (f) => f.properties.continent !== t.continent,
+  );
+  const decoys = [...shuffle(sameContinent), ...shuffle(elsewhere)]
+    .slice(0, 3)
+    .map((f) => f.properties);
+
+  const options = shuffle([t, ...decoys]);
+  return { options, correctIndex: options.findIndex((o) => o.name === t.name) };
+}
+
+/** Builds `count` rounds with no repeated target, weighted toward famous ones. */
 export function buildRounds(all: CountryFeature[], count: number): Round[] {
   const playable = all.filter((f) => f.properties.playable);
   const pool = [...playable];
@@ -113,28 +169,65 @@ export function buildRounds(all: CountryFeature[], count: number): Round[] {
   for (let i = 0; i < n; i++) {
     const target = pickWeighted(pool);
     pool.splice(pool.indexOf(target), 1);
+    rounds.push({ target, ...optionsFor(target, playable) });
+  }
 
-    const t = target.properties;
-    const sameContinent = playable.filter(
-      (f) => f.properties.continent === t.continent && f.properties.name !== t.name,
-    );
-    const elsewhere = playable.filter(
-      (f) => f.properties.continent !== t.continent,
-    );
+  return rounds;
+}
 
-    // Oceania has only 6 playable countries, so top up from other continents
-    // when a continent can't field three decoys of its own.
-    const decoys = [...shuffle(sameContinent), ...shuffle(elsewhere)]
-      .slice(0, 3)
-      .map((f) => f.properties);
+/**
+ * Record-mode rounds ordered easy -> brutal. Each slot targets a difficulty
+ * rank that climbs across the run, sampling a random country from that bucket
+ * (or the nearest non-empty one). The escalating ramp is the retention hook:
+ * viewers win the opener, then stay to see where they crack.
+ */
+export function buildRampRounds(all: CountryFeature[], count: number): Round[] {
+  const playable = all.filter((f) => f.properties.playable);
+  const buckets: CountryFeature[][] = [[], [], [], [], []];
+  for (const f of playable) buckets[difficultyOf(f.properties.pop).rank].push(f);
+  for (const b of buckets) b.sort(() => Math.random() - 0.5);
 
-    const options = shuffle([t, ...decoys]);
+  const cursors = [0, 0, 0, 0, 0];
+  const take = (rank: number): CountryFeature | null => {
+    for (let dist = 0; dist < buckets.length; dist++) {
+      for (const r of [rank - dist, rank + dist]) {
+        if (r >= 0 && r < buckets.length && cursors[r] < buckets[r].length) {
+          return buckets[r][cursors[r]++];
+        }
+      }
+    }
+    return null;
+  };
+
+  const rounds: Round[] = [];
+  for (let i = 0; i < count; i++) {
+    const rank = Math.min(buckets.length - 1, Math.floor((i / count) * buckets.length));
+    const target = take(rank);
+    if (!target) break;
     rounds.push({
       target,
-      options,
-      correctIndex: options.findIndex((o) => o.name === t.name),
+      ...optionsFor(target, playable),
+      difficulty: difficultyOf(target.properties.pop),
     });
   }
 
   return rounds;
+}
+
+/**
+ * One round whose target lives in the given continent, weighted toward famous
+ * countries — used by the spin-the-wheel challenge after the wheel lands.
+ * Falls back to any continent if that one has no playable countries.
+ */
+export function buildRoundInContinent(
+  all: CountryFeature[],
+  continent: string,
+): Round {
+  const playable = all.filter((f) => f.properties.playable);
+  const inContinent = playable.filter(
+    (f) => f.properties.continent === continent,
+  );
+  const pool = inContinent.length > 0 ? inContinent : playable;
+  const target = pickWeighted(pool);
+  return { target, ...optionsFor(target, playable) };
 }

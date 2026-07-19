@@ -82,10 +82,68 @@ export default function Home() {
           </Link>
         </motion.div>
 
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.55, type: "spring", stiffness: 260, damping: 18 }}
+          whileHover={{ scale: 1.04 }}
+          whileTap={{ scale: 0.97 }}
+          className="w-full max-w-sm -mt-4"
+        >
+          <Link
+            href="/language"
+            className="flex items-center justify-center gap-3 w-full rounded-full bg-surface hover:bg-surface-2 border border-line text-cream text-xl font-black py-5 text-center transition"
+          >
+            🗣️ What Language?
+          </Link>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.6, type: "spring", stiffness: 260, damping: 18 }}
+          whileHover={{ scale: 1.04 }}
+          whileTap={{ scale: 0.97 }}
+          className="w-full max-w-sm -mt-4"
+        >
+          <Link
+            href="/higher"
+            className="flex items-center justify-center gap-3 w-full rounded-full bg-surface hover:bg-surface-2 border border-line text-cream text-xl font-black py-5 text-center transition"
+          >
+            👥 Higher or Lower?
+          </Link>
+        </motion.div>
+
         <p className="text-muted text-sm max-w-xs text-center">
           Answer fast, dodge the dumb mistakes, and prove you don&apos;t have
           donkey brains. 🫏
         </p>
+
+        {/* Cold-open, auto-advancing views built for recording vertical Shorts.
+            "auto" plays itself; "you" makes you tap the answers on camera. */}
+        <div className="mt-2 flex flex-col items-center gap-1 text-xs text-muted/50">
+          <span className="uppercase tracking-[0.2em]">🎬 Record for Shorts</span>
+          <div className="flex gap-3">
+            <Link href="/globe?record=1" className="hover:text-muted">
+              Globe · auto
+            </Link>
+            <Link href="/globe?record=me" className="hover:text-muted">
+              Globe · you
+            </Link>
+            <Link href="/globe?record=spin" className="hover:text-muted">
+              Globe · spin
+            </Link>
+            <Link href="/practice?record=1" className="hover:text-muted">
+              Trivia · auto
+            </Link>
+            <Link href="/practice?record=me" className="hover:text-muted">
+              Trivia · you
+            </Link>
+            <Link href="/higher?record=me" className="hover:text-muted">
+              Higher/Lower · you
+            </Link>
+          </div>
+        </div>
 
         {/* {archive && archive.length > 0 && (
           <a href="#archive" className="text-muted/60 hover:text-muted text-sm">

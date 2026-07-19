@@ -5,6 +5,7 @@ import Globe, { type GlobeInstance } from "globe.gl";
 import type { MeshPhongMaterial } from "three";
 import {
   altitudeFor,
+  revealAltitudeFor,
   ringRadiusFor,
   type CountryFeature,
   type CountryProps,
@@ -22,20 +23,39 @@ type Props = {
   /** On a miss, the country the player wrongly picked — lit up in red. */
   wrongPick: CountryProps | null;
   phase: Phase;
+  /** Auto-rotate speed while spinning. Higher = more dramatic whirl. */
+  spinSpeed?: number;
+  /** When true, the reveal pulls the camera way out to show global context. */
+  revealZoomOut?: boolean;
+  /** Realistic day-Earth texture instead of the stylized dark globe. */
+  lightMode?: boolean;
 };
 
-const OCEAN = "#0e1520";
-const LAND = "#2b313b";
-const LAND_STROKE = "#4a515e";
+// Dark globe, but with real contrast between the three layers so the country
+// outlines (grid lines) actually read: a near-black ocean, a lifted slate land,
+// and a distinctly brighter border. The gold highlight still out-values all of
+// them, so it keeps its "spotlight on the answer" pop.
+const OCEAN = "#0a0f17";
+const LAND = "#333c49";
+const LAND_STROKE = "#8b96a8";
 const GOLD = "#ffd21e";
 const EMERALD = "#10b981";
 const ROSE = "#e11d48";
+
+// Light (realistic) mode: transparent country fills so the real Earth texture
+// shows through, with a subtle dark border to keep countries delineated.
+const LIGHT_ATMOSPHERE = "#8ec5ff";
+const LIGHT_STROKE = "rgba(12, 20, 34, 0.45)";
+const TRANSPARENT = "rgba(0, 0, 0, 0)";
 
 export default function GlobeCanvas({
   countries,
   target,
   wrongPick,
   phase,
+  spinSpeed = 18,
+  revealZoomOut = false,
+  lightMode = false,
 }: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
   const globeRef = useRef<GlobeInstance | null>(null);
@@ -50,14 +70,14 @@ export default function GlobeCanvas({
       .backgroundColor("rgba(0,0,0,0)")
       .showGlobe(true)
       .showAtmosphere(true)
-      .atmosphereColor(GOLD)
-      .atmosphereAltitude(0.16)
+      .atmosphereColor(lightMode ? LIGHT_ATMOSPHERE : GOLD)
+      .atmosphereAltitude(lightMode ? 0.2 : 0.16)
       .polygonsData(countries)
       // Without this, hovering a country pops a tooltip with its name in it —
       // which is the entire answer.
       .polygonLabel(() => "")
       .polygonsTransitionDuration(400)
-      .polygonSideColor(() => "rgba(255, 210, 30, 0.12)")
+      .polygonSideColor(() => "rgba(255, 210, 30, 0.18)")
       .ringColor(() => (t: number) => `rgba(255, 210, 30, ${1 - t})`)
       .ringResolution(64)
       .ringPropagationSpeed(3)
@@ -65,7 +85,12 @@ export default function GlobeCanvas({
       .ringAltitude(0.01)
       .ringMaxRadius((r: object) => (r as Ring).maxR);
 
-    (globe.globeMaterial() as MeshPhongMaterial).color.set(OCEAN);
+    if (lightMode) globe.globeImageUrl("/earth.jpg");
+    // In light mode the texture supplies the color; a white material lets it
+    // show true. In dark mode the flat ocean color is the globe.
+    (globe.globeMaterial() as MeshPhongMaterial).color.set(
+      lightMode ? "#ffffff" : OCEAN,
+    );
 
     const controls = globe.controls();
     controls.enablePan = false;
@@ -85,7 +110,7 @@ export default function GlobeCanvas({
       host.replaceChildren();
       globeRef.current = null;
     };
-  }, [countries]);
+  }, [countries, lightMode]);
 
   // Drive the round: recolor the polygons, park or spin the camera, pulse a ring.
   useEffect(() => {
@@ -99,23 +124,30 @@ export default function GlobeCanvas({
       (f as CountryFeature).properties.name === wrongPick.name;
 
     // Re-setting an accessor is what tells three-globe to re-evaluate it, so
-    // these calls are the update, not just configuration.
+    // these calls are the update, not just configuration. In light mode the
+    // non-highlighted countries are transparent so the real Earth shows through.
     globe
       .polygonCapColor((f: object) => {
         if (isTarget(f)) return phase === "revealed" ? EMERALD : GOLD;
         if (isWrong(f)) return ROSE;
-        return LAND;
+        return lightMode ? TRANSPARENT : LAND;
       })
       .polygonStrokeColor((f: object) =>
-        isTarget(f) || isWrong(f) ? "#ffffff" : LAND_STROKE,
+        isTarget(f) || isWrong(f)
+          ? "#ffffff"
+          : lightMode
+            ? LIGHT_STROKE
+            : LAND_STROKE,
       )
-      .polygonAltitude((f: object) => (isTarget(f) || isWrong(f) ? 0.07 : 0.008));
+      .polygonAltitude((f: object) =>
+        isTarget(f) || isWrong(f) ? 0.07 : lightMode ? 0.004 : 0.008,
+      );
 
     const controls = globe.controls();
 
     if (phase === "spinning" || !target) {
       controls.autoRotate = true;
-      controls.autoRotateSpeed = 18;
+      controls.autoRotateSpeed = spinSpeed;
       globe.ringsData([]);
       // Snapped, not tweened: a camera tween would fight autoRotate for control
       // of the camera position until it finished.
@@ -123,11 +155,20 @@ export default function GlobeCanvas({
       return;
     }
 
-    // Stop the spin *before* flying, for the same reason.
+    // Stop the spin *before* flying, for the same reason. By default the camera
+    // holds one framing from guessing through reveal; with revealZoomOut it
+    // pulls way back on reveal for a dramatic "there it is" beat.
     controls.autoRotate = false;
+    const revealing = phase === "revealed" && revealZoomOut;
     globe.pointOfView(
-      { lat: target.lat, lng: target.lng, altitude: altitudeFor(target.size) },
-      1500,
+      {
+        lat: target.lat,
+        lng: target.lng,
+        altitude: revealing
+          ? revealAltitudeFor(target.size)
+          : altitudeFor(target.size),
+      },
+      revealing ? 1100 : 800,
     );
     const ring: Ring = {
       lat: target.lat,
@@ -135,7 +176,7 @@ export default function GlobeCanvas({
       maxR: ringRadiusFor(target.size),
     };
     globe.ringsData([ring]);
-  }, [phase, target, wrongPick]);
+  }, [phase, target, wrongPick, spinSpeed, revealZoomOut, lightMode]);
 
   return <div ref={hostRef} className="absolute inset-0" />;
 }

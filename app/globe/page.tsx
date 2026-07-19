@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Burst, DonkeyRain } from "@/app/components/reactions";
 import {
@@ -12,6 +13,9 @@ import {
   type CountryFeature,
   type Round,
 } from "./countries";
+import RecordMode from "./RecordMode";
+import SpinChallenge from "./SpinChallenge";
+import { useLightGlobe } from "./useLightGlobe";
 import type { Phase } from "./GlobeCanvas";
 
 // three.js touches `window` at import time, so it can never run through SSR.
@@ -37,6 +41,17 @@ const WRONG_LINES = [
   "That's not even close.",
   "Confidently, catastrophically wrong.",
 ];
+const TIMEOUT_LINES = [
+  "Too slow! 🫏",
+  "The donkey answered before you.",
+  "Tick, tock, hee-haw.",
+  "Frozen like a deer. Or a donkey.",
+  "Time's up — the map won.",
+];
+
+/** Seconds on the clock for each guess. */
+const TIMER_SECONDS = 5;
+
 const STREAK_LINES: Record<number, string> = {
   2: "🔥 Two in a row",
   3: "🔥🔥 The donkey is sweating",
@@ -82,6 +97,22 @@ function persona(score: number, total: number) {
 }
 
 export default function GlobePage() {
+  return (
+    <Suspense fallback={<main className="h-screen w-full bg-ink" />}>
+      <GlobeGame />
+    </Suspense>
+  );
+}
+
+function GlobeGame() {
+  const params = useSearchParams();
+  const record = params.has("record");
+  // ?record=1 -> hands-free bot; ?record=me -> you tap the answers;
+  // ?record=spin -> single-question spin-the-globe challenge.
+  const recordVal = params.get("record");
+  const interactive = recordVal === "me";
+  const spin = recordVal === "spin";
+  const [light, setLight] = useLightGlobe();
   const [countries, setCountries] = useState<CountryFeature[] | null>(null);
   const [failed, setFailed] = useState(false);
   const [rounds, setRounds] = useState<Round[] | null>(null);
@@ -91,6 +122,7 @@ export default function GlobePage() {
   const [reaction, setReaction] = useState("");
   const [streak, setStreak] = useState(0);
   const [history, setHistory] = useState<boolean[]>([]);
+  const [timeLeft, setTimeLeft] = useState(TIMER_SECONDS);
 
   useEffect(() => {
     loadCountries().then(setCountries, () => setFailed(true));
@@ -112,15 +144,34 @@ export default function GlobePage() {
 
   const round = rounds && index < rounds.length ? rounds[index] : null;
 
-  // The spin: let it whirl for a beat, then slam to a stop on the target.
+  // The spin: a quick whirl, then slam to a stop on the target.
   useEffect(() => {
     if (!round || phase !== "spinning") return;
-    const t = setTimeout(
-      () => setPhase("guessing"),
-      1600 + Math.random() * 1000,
-    );
+    const t = setTimeout(() => setPhase("guessing"), 600 + Math.random() * 400);
     return () => clearTimeout(t);
   }, [round, phase]);
+
+  // The countdown. Runs off a wall-clock deadline (not an accumulated tick
+  // count) so a throttled background tab can't hand out extra seconds. Running
+  // out is a miss — same bookkeeping as a wrong click, just with no choice.
+  useEffect(() => {
+    if (phase !== "guessing" || !round) return;
+    setTimeLeft(TIMER_SECONDS);
+    const deadline = Date.now() + TIMER_SECONDS * 1000;
+    const id = setInterval(() => {
+      const remaining = Math.max(0, deadline - Date.now());
+      setTimeLeft(remaining / 1000);
+      if (remaining <= 0) {
+        clearInterval(id);
+        setChoice(null);
+        setPhase("revealed");
+        setReaction(pickLine(TIMEOUT_LINES));
+        setStreak(0);
+        setHistory((h) => [...h, false]);
+      }
+    }, 50);
+    return () => clearInterval(id);
+  }, [phase, round]);
 
   const pick = (i: number) => {
     if (!round || phase !== "guessing") return;
@@ -150,7 +201,21 @@ export default function GlobePage() {
     );
   }
 
-  const answered = phase === "revealed" && choice !== null;
+  // Shorts recording view: cold-open, auto-advancing, hands-free. Kept as a
+  // wholly separate render path so the playable game above stays untouched.
+  if (record) {
+    if (!countries)
+      return (
+        <main className="flex h-screen w-full items-center justify-center bg-ink">
+          <p className="animate-pulse text-muted">Loading the planet…</p>
+        </main>
+      );
+    if (spin) return <SpinChallenge countries={countries} />;
+    return <RecordMode countries={countries} interactive={interactive} />;
+  }
+
+  const answered = phase === "revealed";
+  const timedOut = answered && choice === null;
   const gotItRight = answered && choice === round?.correctIndex;
   const finished = rounds != null && index >= rounds.length;
 
@@ -169,6 +234,7 @@ export default function GlobePage() {
             target={finished ? null : target}
             wrongPick={finished ? null : wrongPick}
             phase={finished ? "spinning" : phase}
+            lightMode={light}
           />
         ) : null}
       </div>
@@ -182,7 +248,9 @@ export default function GlobePage() {
         </Overlay>
       )}
 
-      {countries && !rounds && <Setup onStart={start} />}
+      {countries && !rounds && (
+        <Setup onStart={start} light={light} onToggleLight={setLight} />
+      )}
 
       {countries && rounds && !finished && round && (
         <>
@@ -223,11 +291,15 @@ export default function GlobePage() {
                     exit={{ opacity: 0 }}
                     transition={{ type: "spring", stiffness: 300, damping: 26 }}
                   >
+                    {!answered && <Countdown timeLeft={timeLeft} />}
+
                     <h1 className="mb-4 text-center text-xl font-black text-cream sm:text-2xl">
                       {answered
                         ? gotItRight
                           ? "Correct!"
-                          : "Donkey Brains! 🫏"
+                          : timedOut
+                            ? "Time's up! 🫏"
+                            : "Donkey Brains! 🫏"
                         : "Which country is highlighted?"}
                     </h1>
 
@@ -337,7 +409,46 @@ export default function GlobePage() {
   );
 }
 
-function Setup({ onStart }: { onStart: (count: number) => void }) {
+/** Settings toggle: stylized dark globe vs. realistic light Earth. */
+function LightToggle({
+  light,
+  onToggle,
+}: {
+  light: boolean;
+  onToggle: (v: boolean) => void;
+}) {
+  return (
+    <button
+      onClick={() => onToggle(!light)}
+      role="switch"
+      aria-checked={light}
+      className="flex items-center gap-3 rounded-full border border-line bg-surface px-4 py-2.5 text-sm font-bold text-cream transition hover:bg-surface-2"
+    >
+      <span>🌍 Realistic Earth</span>
+      <span
+        className={`relative h-6 w-11 rounded-full transition-colors ${
+          light ? "bg-gold" : "bg-line"
+        }`}
+      >
+        <span
+          className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${
+            light ? "left-[22px]" : "left-0.5"
+          }`}
+        />
+      </span>
+    </button>
+  );
+}
+
+function Setup({
+  onStart,
+  light,
+  onToggleLight,
+}: {
+  onStart: (count: number) => void;
+  light: boolean;
+  onToggleLight: (v: boolean) => void;
+}) {
   return (
     <Overlay>
       <motion.div
@@ -377,9 +488,27 @@ function Setup({ onStart }: { onStart: (count: number) => void }) {
           </div>
         </div>
 
-        <Link href="/" className="text-sm text-muted hover:text-cream">
-          ← Home
-        </Link>
+        <LightToggle light={light} onToggle={onToggleLight} />
+
+        <div className="flex flex-col items-center gap-2">
+          <Link href="/" className="text-sm text-muted hover:text-cream">
+            ← Home
+          </Link>
+          <div className="flex gap-4">
+            <Link
+              href="/globe?record=1"
+              className="text-xs text-muted/60 hover:text-muted"
+            >
+              🎬 Record · auto
+            </Link>
+            <Link
+              href="/globe?record=me"
+              className="text-xs text-muted/60 hover:text-muted"
+            >
+              🎬 Record · you answer
+            </Link>
+          </div>
+        </div>
       </motion.div>
     </Overlay>
   );
@@ -463,6 +592,36 @@ function Results({
         </motion.div>
       </div>
     </Overlay>
+  );
+}
+
+/** Ticking clock for the current guess: a number over a draining bar. */
+function Countdown({ timeLeft }: { timeLeft: number }) {
+  const frac = Math.max(0, Math.min(1, timeLeft / TIMER_SECONDS));
+  const secs = Math.max(0, Math.ceil(timeLeft));
+  const urgent = timeLeft <= 2;
+  return (
+    <div className="mb-3 flex flex-col items-center gap-1.5">
+      <motion.div
+        key={secs}
+        initial={{ scale: 1.3 }}
+        animate={{ scale: 1 }}
+        transition={{ type: "spring", stiffness: 500, damping: 18 }}
+        className={`text-3xl font-black tabular-nums ${
+          urgent ? "text-rose-400" : "text-gold"
+        }`}
+      >
+        {secs}
+      </motion.div>
+      <div className="h-1.5 w-40 overflow-hidden rounded-full bg-white/10">
+        <div
+          className={`h-full rounded-full transition-[width] duration-100 ease-linear ${
+            urgent ? "bg-rose-500" : "bg-gold"
+          }`}
+          style={{ width: `${frac * 100}%` }}
+        />
+      </div>
+    </div>
   );
 }
 
